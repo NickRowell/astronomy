@@ -1,0 +1,29 @@
+Modelling enhancements
+----------------------
+
+Add trapezium solver (may make simulation of observational error, and volume/magnitude limits, impossible)
+
+Code enhancements
+-----------------
+
+2) GUI forms used to manipulate the various modelling variables should keep their own instances of the variable rather than
+   modifying the main ModellingState instance by reference. This would detach them from the WDLF modelling structure and enable
+   their use in more general projects. They would maintain their own instance and serve it up on request, or null if it's own
+   internal checks failed whereupon it would produce an error message in a JOptionPane.
+   Then, move these out of modelling project to wdlf.infra or higher up.
+   
+1) Use a loading window with progress bar to indicate when simulation is running, rather than a progress bar in the GUI.
+   This would make GUI cleaner but may get annoying when many simulations are being done.
+   
+3) SFR models representing analytic functions should use analytic functions internally rather than all using a DiscreteFunction1D
+   which is very clunky. The SFR superclass should defer the choice of implementation to the subclass, so could use discrete function
+   in the case of e.g. fractal or piecewise SFRs. Note that this may complicate the gnuplot script production.
+   Check that this also doesn't violate the requirements of the InitialGuessSFR in inversion project.
+   
+4) The MS parsing should read the original data files rather than my own hacked version. This increases confidence in the data used
+   to interpolate the MS lifetimes.
+   
+5) Resolve problem with recursiveMinWdMass in inversion project that seems to overshoot the upper MS mass level by a small amount.
+   Why is this happening, and can it be avoided?
+   
+6) Move utility methods from ModellingParamsForm to utils.ModellingUtils?

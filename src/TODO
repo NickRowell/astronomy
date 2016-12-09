@@ -1,0 +1,37 @@
+WDLF inverter
+============
+
+2) Add WDLF (model-obs) residuals to plot
+3) Add plot of chi-squared with each iteration
+
+4) Add plot of updated progenitor mass distribution after iteration. Add plot of updated SFR model.
+
+Better density plots -> use combination of points & hess diagram?
+
+Move InitialGuessSFR & InitialSFRForm to sfr package, incorporate into the structure used there.
+
+
+General
+=======
+
+Move all large data files out of the src/resources and into the dedicated data/ directory.
+
+SFR interface is a mess - instead of using a discrete function internally at the base class level, would
+be best to simply specify a bunch of methods that SFR implementations must provide. That way the concrete classes
+are free to use an analytic representation of the SFR which will speed up e.g. drawing creation times, integrating
+the function etc and provide greater accuracy.
+
+Complete merger of proper motion deprojection code & revival of SSS catalogue deprojection class in sss.wdlf package.
+
+WDLF modelling:
+ - Forms should not keep a reference to the ModellingState, rather they only keep references to the objects they
+   manipulate. This makes the forms more flexible as it doesn't tie them to any particular type of state object.
+
+Merge old SSS code into the sss package; eliminate multiple old copies.
+
+Main sequence lifetime code should not barf if we give a mass outside the range of pre-WD masses. It's the
+responsibility of whatever modelling code is invoking the method to check the mass it's giving.
+
+Tidy up test classes -> wd.cooling.test.WDTester
+
+Add comments and javadoc

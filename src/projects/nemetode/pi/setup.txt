@@ -1,0 +1,141 @@
+# Hardware required:
+#  - Real time clock (setup assumes this is already installed & configured)
+#  - WiFi dongle (I used a powerful long-range one which required in addition a powered USB hub, as the
+#                 USB ports on the pi itself could not always supply the power necessary for the dongle)
+#  - Relay board
+
+# Software required:
+#  - WiringPI
+#  - sunwait
+#  - weather-util
+#  - apache webserver
+# Setup script will install and configure these
+
+
+sudo apt-get update
+
+################## apache webserver and php
+sudo apt-get install apache2
+sudo apt-get install php5 libapache2-mod-php5
+
+################## image and video postprocessing
+sudo apt-get install imagemagick
+sudo apt-get install libavconv
+
+################## wiringpi
+cd ~/
+git clone git://git.drogon.net/wiringPi
+cd wiringPi/
+./build
+
+################## sunwait
+# Make a directory to contain sunwait
+mkdir ~/sunwait
+cd ~/sunwait/
+# Download and extract sunwait source
+wget www.risacher.org/sunwait/sunwait-20041208.tar.gz
+tar -xzvf sunwait-20041208.tar.gz
+cd sunwait-20041208/
+# Build sunwait
+make
+# Install links
+sudo ln -s /home/pi/sunwait/sunwait-20041208/sunwait /usr/local/bin/sunwait
+# Verify that sunwait has been installed...
+/usr/local/bin/sunwait -p 0N 0W
+
+################## weather utils
+sudo apt-get install weather-util
+
+
+
+################## ssmtp
+sudo apt-get install ssmtp
+sudo apt-get install mailutils
+
+# Edit config file:
+sudo nano /etc/ssmtp/ssmtp.conf
+# It needs to include this (for a gmail account):
+root=postmaster
+mailhub=smtp.gmail.com:587
+hostname=raspberrypi
+AuthUser=AGmailUserName@gmail.com
+AuthPass=TheGmailPassword
+FromLineOverride=YES
+UseSTARTTLS=YES
+
+### NOTE: my existing gmail account refused to work with the pi as it logged it as a security risk.
+          I created a new gmail account purely for use with the pi. This worked fine without any
+          special settings.
+
+# Shell script ip_check.sh:
+
+# Create initial ip address file:
+$ echo "test" > /home/pi/ip.txt
+
+# Crontab entry:
+0,15,30,45 * * * * /home/pi/NEMETODE/ip_check.sh
+
+
+
+################## Symbolic links in webserver directory
+cd /var/www
+sudo ls -s /home/pi/override.txt override.txt
+sudo ls -s /home/pi/nemetode.log nemetode.log
+# Download the jQuery library:
+sudo wget http://bit.ly/jqsource -O jquery.js
+# Files to put in place:
+index.html, save.php
+
+################## crontab
+sudo crontab -e
+
+# Immediately configure output pins
+@reboot /home/pi/NEMETODE/pin_setup.sh
+
+# Schedule the startup script for an appropriate time in the afternoon
+00 15 * * * /home/pi/NEMETODE/startup.sh
+
+################## Fixing wifi dropout:
+#
+# Current thoughts: seems most likely to be a power issue, i.e. the wifi dongle requires more
+#                   power than the pi can provide. In this case a powered USB hub is needed.
+#
+# Troubleshooting:
+# Get the kernel routing table:
+# $ sudo route -n
+# Get the current IP config:
+# $ sudo ifconfig
+#
+# When the wifi drops, the kernel routing table is empty and the wlan0 entry is missing the inet addr and Mask fields
+#
+# The networking service can be restarted:
+# $ sudo service networking restart
+#
+# Need to figure out which kernel module corresponds to the WiFi dongle driver.
+# This will be called something like r8712u or r8192cu depending on what model
+# of WiFi dongle is being used.
+# 
+# lsusb tells what USB devices are attached. This can give useful information, but
+# the numbers returned for the WiFi device don't necessarily correspond to the kernel
+# module that's loaded by the pi:
+#
+# lsmod tells what kernel modules are loaded. So in order to determine what module
+# corresponds to the pi, do the following:
+# 1) Turn off the pi, unplug the wifi dongle and turn the pi back on.
+# 2) Run the command lsmod to see what kernel modules are loaded
+# 3) Plug in the WiFi dongle, wait 30s or so, then run lsmod again
+# 4) A new module should have appeared that corresponds to the WiFi dongle
+#
+# In my case, the module is called r8712u. It's possible to check what the current
+# power management setting is by running
+cat /sys/module/r8712u/parameters/power_mgnt
+# ...which returns '1' or '0'. We want to turn this OFF (0) by default, so do the
+# following:
+# Create and edit a new file in /etc/modprobe.d/r8712u.conf
+sudo nano /etc/modprobe.d/r8712u.conf
+# and paste the following in
+ # Disable power saving
+ options r8712u power_mgnt=0
+# Then reboot with sudo reboot. The parameter should now be set to 0 every time.
+
+

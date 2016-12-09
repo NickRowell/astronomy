@@ -1,0 +1,75 @@
+Issues:
+    When JDK 7 is used, main GUI frames are unresponsive.
+
+To do:
+    Update user manual now that program works on macs. Also libWDLF and
+    MathsUoD no longer distributed with modelWDLF: all required classes have
+    been pulled into this project.
+    Add slow decay SFR to options.
+    Show formula for each SFR type so the parameters are clear.
+
+    DiscreteFunction1D: test integration methods.
+    
+    Write documentation.
+    
+    Double check mass-luminosity and age-luminosity relations calculation.
+    
+    Implement Trapezium solver. Could simulate stats for a certain
+    number of survey stars by setting time steps in integration loop
+    so that one star forms in each step. Steps would not be of the same
+    fixed size in this case.
+
+
+
+-- version 1.02
+    Removed instruction to exit program if user is on a mac. Program now 
+        behaves in the same way as in linux environment. I haven't been able to
+        test the program on a mac but will assume this is OK as mac os is linux
+        based.
+    Major change: all library classes imported from libWDLF and MathsUoD 
+        projects have been pulled into this project to keep everything self
+        contained and reduce bloat factor.
+    Source code now included in package.
+    Removed Ferrario et al. 2005 polynomial Initial-Final mass relation. This
+        required a third party Java library to solve polynomial roots, and the
+        library has been taken out of the public domain.
+
+-- version 1.01
+    Corrected a bug in ModellingParametersForm that meant WD models were stuck
+        on Montreal, but gave the illusion in the GUI of changing to BaSTI if
+        these were selected. The output file always said Montreal.
+    Subsequently corrected a bug that meant that the two BaSTI model types both
+        reported themselves as 'BASTI' in the output file. They are now     
+        distinguished as BASTI_PS and BASTI_NO_PS.
+    Moved a bunch of MS & WD boundary drawing methods from Progenitors and
+        WhiteDwarfs classes to ModellingParameters. They don't depend on the
+        particular instance of a simulated population of stars, so don't need
+        access to the data of these classes. This makes the classes smaller
+        and also paves the way to making lightweight implementations of these
+        classes that don't store full Star objects in memory, but can still
+        use the boundary drawing methods.
+    Wrote a new lightweight version of WhiteDwarfs (WhiteDwarfsLite) that 
+        doesn't use an ObjectVaryingHistogram to store all the simulated Star 
+        objects in memory. This has the effect of removing the upper limit on 
+        the number of simulation WDs that can be used.
+
+    Changes to libWDLF:
+        Greatly improved the handling of different types of IFMR, WD and 
+        MS classes. All available classes have a corresponding enum type
+        that contains an instance of the class. This allows automatic building
+        of combobox entries and far more efficient selection of different 
+        types. This removes the need for factory methods. All options are
+        initialised at startup so GUI is more responsive.
+    Merged WD interface and WDFactory class. There was no longer any reason to
+        make the distinction.
+    SFR class now uses full precision in toString() rather than attempting to 
+        nicely format doubles, because I found this was losing precision when
+        very narrow SFR bins were used. Also included "error" in SFR header
+        in output file to indicate what the third column is for.
+
+    - N Rowell 10/06/2013
+
+-- version 1.00
+    First release.
+
+    - N Rowell 29/03/2013

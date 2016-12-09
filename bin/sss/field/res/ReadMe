@@ -1,0 +1,10 @@
+Field centres based on Palomar system, as retrieved from SSA database using:
+
+select  fieldNum, nominalRA, nominalDec
+
+from field
+
+where systemID = 3
+
+order by fieldNum
+

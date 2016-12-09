@@ -1,0 +1,14 @@
+The files in this directory contain selected data from the full stellar 
+evolutionary tracks. For each mass, the total pre-WD lifetime is listed
+as a combination of the main sequence and horizontal branch lifetimes.
+Technically, the pre-WD lifetime is assumed to end at the first thermal
+pulse on the asymptotic giant branch, which is where most of the stellar
+models terminate. Low mass models are artificially terminated at arbitrary
+times older than the age of the universe.
+
+The data chosen for interpolating pre-WD lifetimes is those masses that
+are evolved from the ZAMS to the first thermal pulse (some have only HB
+lifetimes). Any low masses that have been terminated early are removed,
+so that the data shows a monotonic rise to low mass. This eases the
+inverting of the functions and ensures a given pre-WD lifetime has a
+unique mass solution.

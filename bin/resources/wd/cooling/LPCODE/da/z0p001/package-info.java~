@@ -1,0 +1,4 @@
+/**
+ * Package contains models for metallicity Z=0.01
+ */
+package resources.wd.cooling.Renedo.da.z0p01;

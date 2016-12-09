@@ -1,0 +1,35 @@
+# Date and time of run: 19:09:59 15/11/2010
+# Sequence of v_{tan} thresholds  = 30.0, 50.0, 80.0, 120.0, 200.0
+# Scaleheight for thin disk = 250.0
+# Scaleheight for thick disk = 1500.0
+# Discrete v_{tan} ranges
+# Densities are per unit M_{bol}, at half magnitude points, obtained
+# by doubling half-magnitude density.
+#
+#
+# Omitted lines are either under constrained, or have only 
+# trivial result 0.0 in one or more component.
+#
+3.25	0.5	2.353E-8	1.782E-8
+4.25	0.5	3.833E-8	2.155E-8
+4.75	0.5	8.257E-8	3.140E-8
+5.25	0.5	1.609E-7	4.184E-8
+5.75	0.5	1.485E-7	4.286E-8
+6.25	0.5	1.468E-7	4.605E-8
+6.75	0.5	5.646E-7	8.683E-8
+7.25	0.5	1.018E-6	1.333E-7
+7.75	0.5	1.212E-6	1.671E-7
+8.25	0.5	1.957E-6	2.144E-7
+8.75	0.5	2.611E-6	2.811E-7
+9.25	0.5	2.853E-6	3.461E-7
+9.75	0.5	5.457E-6	5.277E-7
+10.25	0.5	7.474E-6	7.128E-7
+10.75	0.5	1.269E-5	9.636E-7
+11.25	0.5	1.854E-5	1.275E-6
+11.75	0.5	2.143E-5	1.704E-6
+12.25	0.5	3.646E-5	2.537E-6
+13.25	0.5	7.996E-5	5.908E-6
+13.75	0.5	1.041E-4	9.289E-6
+14.25	0.5	1.422E-4	1.405E-5
+14.75	0.5	2.280E-4	2.418E-5
+15.25	0.5	1.969E-4	4.829E-5
