@@ -204,7 +204,7 @@ public class BaseWdlf {
      * @return
      * 	A suitable X axis range for plotting the WDLF.
      */
-    protected double[] getXRange() {
+    public double[] getXRange() {
         return density.getRangeX();
     }
 

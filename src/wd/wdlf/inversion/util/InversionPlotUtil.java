@@ -76,28 +76,27 @@ public class InversionPlotUtil {
     private static final String pmsPlotFilename = "pms.png";
     private static final String pwdPlotFilename = "pwd.png";
 	
-	// Used to set WD mass distribution plot range. TODO: should this be fixed or set programmatically?
-	private static final double[] wd_mass_range = {0.425, 1.3};
-	private static final double[] progenitor_mass_range = {0.1, 8.5};
-	private static final double[] wd_mag_range = {-2, 18};
-	
-	/**
-	 * Step size in WD mass function for plotting [M_{Solar}]
+    /**
+	 * Step size in WD mass function for plotting [M_{Solar}]. Note that the step size
+	 * used is trimmed down to fit a whole number of steps within the defined range.
 	 */
 	private static final double wdMassFunctionStepSize = 0.01;
 	
 	/**
-	 * Step size in WD luminosity function for plotting [mag]
+	 * Step size in WD luminosity function for plotting [mag]. Note that the step size
+	 * used is trimmed down to fit a whole number of steps within the defined range.
 	 */
 	private static final double wdLuminosityFunctionStepSize = 0.1;
 	
 	/**
-	 * Step size in progenitor mass function for plotting [M_{Solar}]
+	 * Step size in progenitor mass function for plotting [M_{Solar}]. Note that the step size
+	 * used is trimmed down to fit a whole number of steps within the defined range.
 	 */
 	private static final double progenitorMassFunctionStepSize = 0.05;
 	
 	/** 
-	 * Step size in progenitor formation time function for plotting [yr]
+	 * Step size in progenitor formation time function for plotting [yr]. Note that the step size
+	 * used is trimmed down to fit a whole number of steps within the defined range.
 	 */
 	private static final double progenitorFormationTimeFunctionStepSize = 1e8;
 	
@@ -163,44 +162,45 @@ public class InversionPlotUtil {
         
         double minX = tMin/1.0E9;
         double maxX = tMax/1.0E9;
-        double dX = progenitorFormationTimeFunctionStepSize/1.0E9;
+        double dX = (maxX - minX) / Math.ceil((maxX - minX) / (progenitorFormationTimeFunctionStepSize/1.0E9));
         double minY = low_mass_limit;
         double maxY = BaseImf.M_upper;
-        double dY = progenitorMassFunctionStepSize;
+        double dY = (maxY - minY) / Math.ceil((maxY - minY) / progenitorMassFunctionStepSize);
+        
         
         // Configures normalisation of the mass distribution
         boolean normalise = true;
         double integral = 1.0;
         
-        Histogram progenitorMassFunction = new Histogram(minY, maxY, dY, true);
+        Histogram progenitorMassDistribution = new Histogram(minY, maxY, dY, true);
         double progenitorMassFunctionPeak = 1.0;
-        Histogram2D progenitorMassAndFormationTimeFunction = new Histogram2D(minX, maxX, dX, minY, maxY, dY, true);
+        Histogram2D msMassFormationTimeDistribution = new Histogram2D(minX, maxX, dX, minY, maxY, dY, true);
         double zmax = 1.0;
         
         if(progenitors!=null) {
         	for(int bin=0; bin<progenitors.size(); bin++) {
                 // Loop over all stars in bin
                 for (Star star : progenitors.get(bin)) {
-                    progenitorMassAndFormationTimeFunction.add(star.getTotalAge()/1.0E9, star.getProgenitorMass(), star.getNumber()/(dX*dY));
-                    progenitorMassFunction.add(star.getProgenitorMass(), star.getNumber());
+                    msMassFormationTimeDistribution.add(star.getTotalAge()/1.0E9, star.getProgenitorMass(), star.getNumber()/(dX*dY));
+                    progenitorMassDistribution.add(star.getProgenitorMass(), star.getNumber());
                 }
             }
-        	zmax = progenitorMassAndFormationTimeFunction.getMax();
-        	progenitorMassFunctionPeak = progenitorMassFunction.getMax();
-        	integral = normalise ? progenitorMassFunction.integrate() : 1.0;
+        	zmax = msMassFormationTimeDistribution.getMax();
+        	progenitorMassFunctionPeak = progenitorMassDistribution.getMax();
+        	integral = normalise ? progenitorMassDistribution.integrate() : 1.0;
         	progenitorMassFunctionPeak /= integral;
         }
         
         out = new BufferedWriter(new FileWriter(new File(parent, pmsFilename)));
-        out.write(progenitorMassAndFormationTimeFunction.print(false));
+        out.write(msMassFormationTimeDistribution.print(false));
         out.close();
         
         out = new BufferedWriter(new FileWriter(new File(parent, progenitorMassDistFileName)));
         
-        for(int i=0; i<progenitorMassFunction.getNumberOfBins(); i++) {
-        	double binCentre = progenitorMassFunction.getBinCentre(i);
+        for(int i=0; i<progenitorMassDistribution.getNumberOfBins(); i++) {
+        	double binCentre = progenitorMassDistribution.getBinCentre(i);
         	double initMassDist = params.getIMF().getIMF(binCentre);
-        	double updMassDist = progenitorMassFunction.getBinContents(i)/(integral);
+        	double updMassDist = progenitorMassDistribution.getBinContents(i)/(integral);
         	out.write(binCentre + "\t" + initMassDist + "\t" + updMassDist + "\n");
         }
         out.close();
@@ -303,7 +303,9 @@ public class InversionPlotUtil {
         //                Plot the marginal mass distribution                       //
         //                                                                          //
         //////////////////////////////////////////////////////////////////////////////
-        
+
+    	double[] progenitor_mass_range = {0.0, BaseImf.M_upper};
+    	
         // Margins for mass distribution plot
         script.append("set lmargin at screen 0.15").append(OSChecker.newline);
         script.append("set rmargin at screen 0.25").append(OSChecker.newline);
@@ -322,8 +324,8 @@ public class InversionPlotUtil {
         script.append("set ylabel \"{/"+OSChecker.getFont()+"=14 Progenitor Mass [\".solarMass.\"]}\" offset 0,0").append(OSChecker.newline);
         
         // Plot annotations
-        script.append("set label 1 'initial' at "+progenitorMassFunctionPeak+",6 rotate font ',8' tc rgbcolor 'grey'").append(OSChecker.newline);
-        script.append("set label 2 'updated' at "+0.8*progenitorMassFunctionPeak+",6 rotate font ',8' tc rgbcolor 'blue'").append(OSChecker.newline);
+        script.append("set label 1 'initial' at "+progenitorMassFunctionPeak+", graph 0.7 rotate font ',8' tc rgbcolor 'grey'").append(OSChecker.newline);
+        script.append("set label 2 'updated' at "+0.8*progenitorMassFunctionPeak+", graph 0.7 rotate font ',8' tc rgbcolor 'blue'").append(OSChecker.newline);
         
         // Plot progenitor mass distribution
         script.append("plot '" + parent.getPath() + OSChecker.pathSep + progenitorMassDistFileName + "' u 2:1 w l ls 5,\\").append(OSChecker.newline);
@@ -348,7 +350,7 @@ public class InversionPlotUtil {
         script.append("set tmargin at screen 0.95").append(OSChecker.newline);
         
         // X axis
-        script.append("set xrange [0:"+(tMax/1E9)+"+0.5] noreverse").append(OSChecker.newline);
+        script.append("set xrange [0:"+(tMax/1E9)+"] noreverse").append(OSChecker.newline);
         script.append("unset xtics").append(OSChecker.newline);
         script.append("unset xlabel").append(OSChecker.newline);
         
@@ -360,7 +362,7 @@ public class InversionPlotUtil {
         script.append("set cblabel \"Density\\n[N ({/Symbol \\264}10^{"+zexp+"}) yr^{-1} \".solarMass.\"^{-1}]\" font '"+OSChecker.getFont()+",14' offset 0,0").append(OSChecker.newline);
         script.append("set cbtics 1 font \""+OSChecker.getFont()+",12\" nomirror out").append(OSChecker.newline);
         script.append("set mcbtics 2").append(OSChecker.newline);
-        script.append("set palette defined (0 \"white\", 0.01 \"yellow\", 0.05 \"orange\", 0.15 \"red\", 0.4 \"black\")").append(OSChecker.newline);
+        script.append("set palette defined (0 \"white\", 0.0001 \"yellow\", 0.001 \"orange\", 0.01 \"red\", 0.1 \"black\")").append(OSChecker.newline);
         // Contour parameters
         script.append("set cont base").append(OSChecker.newline);
         script.append("unset clabel").append(OSChecker.newline);
@@ -498,42 +500,48 @@ public class InversionPlotUtil {
         double low_mass_limit_MS = params.getPreWdLifetime().getStellarMass(z, y, tMax)[0];
         double low_mass_limit_WD = params.getIFMR().getMf(low_mass_limit_MS);
         
-        double minX = wd_mag_range[0];
-        double maxX = wd_mag_range[1];
-        double dX = wdLuminosityFunctionStepSize;
+        // Set magnitude axis range such that the observational WDLF lies in central 4/5
+        double minObsMag = inversionState.wdlf_obs.getXRange()[0];
+        double maxObsMag = inversionState.wdlf_obs.getXRange()[1];
+        double marginMag = (maxObsMag - minObsMag) / 10.0;
+        double minX = minObsMag - marginMag;
+        double maxX = maxObsMag + marginMag;
+        // Reduce the step size in order to fit in a whole number of bins
+        double dX = (maxX - minX) / Math.ceil((maxX - minX) / wdLuminosityFunctionStepSize);
         double minY = low_mass_limit_WD;
         double maxY = params.getIFMR().getMf(BaseImf.M_upper);
-        double dY = wdMassFunctionStepSize;
+        // Reduce the step size in order to fit in a whole number of bins
+        double dY = (maxY - minY) / Math.ceil((maxY - minY) / wdMassFunctionStepSize);
 
-        Histogram wdMassFunction = new Histogram(minY, maxY, dY, true);
+        Histogram wdMassDistribution = new Histogram(minY, maxY, dY, true);
         double wdMassFunctionPeak = 0.5;
         double meanWdMass = Double.NaN;
         double medianWdMass = Double.NaN;
         
-        Histogram2D zMap = new Histogram2D(minX, maxX, dX, minY, maxY, dY, true);
+        Histogram2D wdMassMagJointDistribution = new Histogram2D(minX, maxX, dX, minY, maxY, dY, true);
         double zmax = 10.0;
         int zexp = 1;
         if(whiteDwarfs!=null) {
         	// Populate the histogram
         	for(int bin=0; bin<whiteDwarfs.size(); bin++) {
                 for (Star star : whiteDwarfs.get(bin)) {
-                    zMap.add(star.getMag(), star.getWhiteDwarfMass(), star.getNumber()/(dX*dY));
-                    wdMassFunction.add(star.getWhiteDwarfMass(), star.getNumber());
+                    wdMassMagJointDistribution.add(star.getMag(), star.getWhiteDwarfMass(), star.getNumber()/(dX*dY));
+                    wdMassDistribution.add(star.getWhiteDwarfMass(), star.getNumber());
                 }
         	}
-        	zmax = zMap.getMax();
+        	zmax = wdMassMagJointDistribution.getMax();
         	zexp = (int)Math.floor(Math.log10(zmax));
-        	wdMassFunctionPeak = wdMassFunction.getMax();
-            meanWdMass = wdMassFunction.getMean();
-            medianWdMass = wdMassFunction.getMedian();
+        	wdMassFunctionPeak = wdMassDistribution.getMax();
+            meanWdMass = wdMassDistribution.getMean();
+            medianWdMass = wdMassDistribution.getMedian();
         }
         
         out = new BufferedWriter(new FileWriter(new File(parent, pwdFileName)));
-        out.write(zMap.print(false));
+        out.write(wdMassMagJointDistribution.print(false));
         out.close();
         
         out = new BufferedWriter(new FileWriter(new File(parent, wdMassDistFileName)));
-        out.write(wdMassFunction.print(false));
+        out.write(wdMassDistribution.print(false));
         out.close();
         
 
@@ -545,20 +553,20 @@ public class InversionPlotUtil {
         
         // Upper mass limit of WDs
         out = new BufferedWriter(new FileWriter(new File(parent, maxWDMassFileName)));
-        out.write(wd_mag_range[0]+"\t"+params.getIFMR().getMf(BaseImf.M_upper)+OSChecker.newline);
-        out.write(wd_mag_range[1]+"\t"+params.getIFMR().getMf(BaseImf.M_upper)+OSChecker.newline);
+        out.write(minX+"\t"+params.getIFMR().getMf(BaseImf.M_upper)+OSChecker.newline);
+        out.write(maxX+"\t"+params.getIFMR().getMf(BaseImf.M_upper)+OSChecker.newline);
         out.close();
         
         // Low mass limit for WDs (H atmosphere): encloses the lower and right sides of the P_{WD} plane
         out = new BufferedWriter(new FileWriter(new File(parent, minHWDMassFileName)));
-        for(double[] point : getLowMassWDLimit(params, tMax, WdAtmosphereType.H, wd_mag_range[1])) {
+        for(double[] point : getLowMassWDLimit(params, tMax, WdAtmosphereType.H, maxX)) {
         	out.write(point[0]+"\t"+point[1]+OSChecker.newline);
         }
         out.close();
         
         // Low mass limit for WDs (He atmosphere): encloses the lower and right sides of the P_{WD} plane
         out = new BufferedWriter(new FileWriter(new File(parent, minHeWDMassFileName)));
-        for(double[] point : getLowMassWDLimit(params, tMax, WdAtmosphereType.He, wd_mag_range[1])) {
+        for(double[] point : getLowMassWDLimit(params, tMax, WdAtmosphereType.He, maxX)) {
         	out.write(point[0]+"\t"+point[1]+OSChecker.newline);
         }
         out.close();
@@ -613,7 +621,8 @@ public class InversionPlotUtil {
         //                Plot the marginal mass distribution                       //
         //                                                                          //
         //////////////////////////////////////////////////////////////////////////////
-        
+
+    	
         // Margins for mass distribution plot
         script.append("set lmargin at screen 0.15").append(OSChecker.newline);
         script.append("set rmargin at screen 0.25").append(OSChecker.newline);
@@ -626,8 +635,8 @@ public class InversionPlotUtil {
         script.append("set xtics format ''").append(OSChecker.newline);
         
         // Y axis
-        script.append("set yrange ["+wd_mass_range[0]+":"+wd_mass_range[1]+"]").append(OSChecker.newline);
-        script.append("set ytics 0.2 font \""+OSChecker.getFont()+",12\"").append(OSChecker.newline);
+        script.append("set yrange ["+minY+":"+maxY+"]").append(OSChecker.newline);
+        script.append("set ytics 0.1 font \""+OSChecker.getFont()+",12\"").append(OSChecker.newline);
         script.append("set mytics 2").append(OSChecker.newline);
         script.append("set ylabel \"WD Mass [\".solarMass.\"]\" font '"+OSChecker.getFont()+",14' offset 0,0").append(OSChecker.newline);
         
@@ -661,7 +670,7 @@ public class InversionPlotUtil {
         script.append("set tmargin at screen 0.95").append(OSChecker.newline);
         
         // X axis
-        script.append("set xrange ["+wd_mag_range[0]+":"+wd_mag_range[1]+"] noreverse").append(OSChecker.newline);
+        script.append("set xrange ["+minX+":"+maxX+"] noreverse").append(OSChecker.newline);
         script.append("unset xtics").append(OSChecker.newline);
         script.append("unset xlabel").append(OSChecker.newline);
         
