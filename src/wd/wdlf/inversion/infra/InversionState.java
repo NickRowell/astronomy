@@ -100,7 +100,7 @@ public class InversionState extends State
         out.append("parentOutputDirectory = ").append((outputDirectory!=null) ? outputDirectory.toString() : "null").append("\n");
         out.append("Writing output to disk? ").append(writeOutput ? "yes\n" : "no\n");
         out.append("Modelling Parameters:\n").append(params.toString());
-        out.append("Observed WDLF = ").append(wdlf_obs.name).append("\n");
+        out.append("Observed WDLF = ").append(wdlf_obs.target).append("\n");
         out.append("Initial guess SFR parameters:\n").append(currentSfr.printParameters());
         
         return out.toString();

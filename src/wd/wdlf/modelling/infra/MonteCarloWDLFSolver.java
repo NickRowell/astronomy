@@ -180,7 +180,7 @@ public class MonteCarloWDLFSolver extends WDLFSolver {
         
         // Get only non-zero density bins from whiteDwarfs
         ModelWDLF modelWdlf = ModelWdlfUtil.getLF(true, whiteDwarfs);
-        modelWdlf.setName("Simulated WDLF");
+        modelWdlf.setTarget("Simulated WDLF");
         modelWdlf.setFilter(modellingState.params.getFilter());
         
         return modelWdlf;

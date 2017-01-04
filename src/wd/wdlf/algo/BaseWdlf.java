@@ -32,13 +32,19 @@ public class BaseWdlf {
     /**
      * Name of WDLF, used to identify it and set plot labels etc.
      */
-    public String name = "default";
+    public String target;
+    
+    /**
+     * Reference for the WDLF observation (e.g. 'Harris et al (2013)')
+     */
+    public String reference;
     
     /**
      * Default constructor.
      */
     public BaseWdlf() {
-    	
+    	target = "default";
+    	reference = "default";
     }
     
     /**
@@ -85,12 +91,16 @@ public class BaseWdlf {
     }
     
     /**
-     * Set the {@link #name} of WDLF, used to identify it and set plot labels etc.
-     * @param name
-     * 	The {@link #name} to set.
+     * Set the {@link #target} of WDLF, used to identify it and set plot labels etc.
+     * @param target
+     * 	The {@link #target} to set.
      */
-    public final void setName(String name) { 
-    	this.name = name;
+    public final void setTarget(String target) { 
+    	this.target = target;
+    }
+    
+    public final void setReference(String reference) {
+    	this.reference = reference;
     }
     
     /**
@@ -163,9 +173,9 @@ public class BaseWdlf {
         output.append("set style line 1 lt 1 pt 5 ps 0.5  lc rgb \"black\" lw 1").append(OSChecker.newline);
         output.append("set bar 0.25").append(OSChecker.newline);
         output.append("set key top left Left").append(OSChecker.newline);
-        output.append("set title '{/"+OSChecker.getFont()+"=10 "+name+"}'").append(OSChecker.newline);
+        output.append("set title '{/"+OSChecker.getFont()+"=10 WDLF for "+target+"}'").append(OSChecker.newline);
         output.append("plot '-' u 1:(log10($3)) w lp ls 1 notitle,\\").append(OSChecker.newline);
-        output.append("  	'-' u 1:(log10($3)):(log10(f($3,$4))):(log10($3+$4)) w yerrorbars ls 1 notitle").append(OSChecker.newline);
+        output.append("  	'-' u 1:(log10($3)):(log10(f($3,$4))):(log10($3+$4)) w yerrorbars ls 1 title \""+reference+"\" ").append(OSChecker.newline);
         
         // Need two copies of inline data due to two uses of special
         // filename '-' in gnuplot plot command

@@ -275,8 +275,7 @@ public class WdlfInputForm extends EntryForm {
 		// What initialisation to make? We could think about restricting the range of WDLFs available
 		// based on the {@link Filter} that the user selected.
 		
-		obsWDLFComboBox.setSelectedItem(inversionState.wdlf_obs);
-		
+        inversionState.wdlf_obs = ((ObservedWdlf)obsWDLFComboBox.getSelectedItem()).wdlf;
 		
 		// Plot the WDLF
 		plotWDLF();
@@ -364,7 +363,7 @@ class ObsWDLFInputVerifier extends EntryFormResult
         if(valid) {
             // Values all ok - initialise WDLF
             this.wdlf_obs = new BaseWdlf(data[0], data[1], data[2], data[3], distMod);
-            this.wdlf_obs.setName("User WDLF");
+            this.wdlf_obs.setTarget("User WDLF");
             this.wdlf_obs.setFilter(filter);
         }
         

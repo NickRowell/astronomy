@@ -272,7 +272,6 @@ public class InversionPlotUtil {
         
         // Maximum colour box. Set 5 contours evenly distributed in this range
         int zexp = (int)Math.floor(Math.log10(zmax));
-        double cbmax = Math.ceil(zmax*Math.pow(10,-zexp));
         
         StringBuilder script = new StringBuilder();
 
@@ -283,7 +282,7 @@ public class InversionPlotUtil {
         //////////////////////////////////////////////////////////////////////////////
         
         script.append("solarMass = \"M_{"+CharUtil.solar+"}\"").append(OSChecker.newline);
-        script.append("set terminal pngcairo enhanced color crop").append(OSChecker.newline);
+        script.append("set terminal pngcairo enhanced color crop size 1024,1024").append(OSChecker.newline);
         
         script.append("set style line 1 lt 2 lc rgb \"blue\" lw 1").append(OSChecker.newline);     // Style used to draw MS boundary line
         script.append("set style line 2 lt 1 lc rgb \"grey\" lw 1").append(OSChecker.newline);     // Style used to fill in grey region below low mass MS line
@@ -293,7 +292,7 @@ public class InversionPlotUtil {
         // Style used for mass function (initial)
         script.append("set style line 5 lt 3 lc rgb \"grey\" lw 1").append(OSChecker.newline);
         
-        script.append("set size nosquare").append(OSChecker.newline);
+//        script.append("set size nosquare").append(OSChecker.newline);
         script.append("set multiplot").append(OSChecker.newline);
         script.append("set key off").append(OSChecker.newline);
         script.append("set tics scale 0.5").append(OSChecker.newline);
@@ -308,7 +307,7 @@ public class InversionPlotUtil {
     	
         // Margins for mass distribution plot
         script.append("set lmargin at screen 0.15").append(OSChecker.newline);
-        script.append("set rmargin at screen 0.25").append(OSChecker.newline);
+        script.append("set rmargin at screen 0.23").append(OSChecker.newline);
         script.append("set bmargin at screen 0.55").append(OSChecker.newline);
         script.append("set tmargin at screen 0.95").append(OSChecker.newline);
         
@@ -364,10 +363,11 @@ public class InversionPlotUtil {
         script.append("set mcbtics 2").append(OSChecker.newline);
         script.append("set palette defined (0 \"white\", 0.0001 \"yellow\", 0.001 \"orange\", 0.01 \"red\", 0.1 \"black\")").append(OSChecker.newline);
         // Contour parameters
-        script.append("set cont base").append(OSChecker.newline);
-        script.append("unset clabel").append(OSChecker.newline);
-        script.append("set cntrparam levels discrete "+0.1*cbmax+","+0.2*cbmax+","+0.5*cbmax+","+0.8*cbmax+"").append(OSChecker.newline);
-        script.append("set cntrparam linear").append(OSChecker.newline);
+//        double cbmax = Math.ceil(zmax*Math.pow(10,-zexp));
+//        script.append("set cont base").append(OSChecker.newline);
+//        script.append("unset clabel").append(OSChecker.newline);
+//        script.append("set cntrparam levels discrete "+0.1*cbmax+","+0.2*cbmax+","+0.5*cbmax+","+0.8*cbmax+"").append(OSChecker.newline);
+//        script.append("set cntrparam linear").append(OSChecker.newline);
         
         // Use rectangle to fill unpopulated region of plane with grey background.
         script.append("set object 1 rectangle from graph 0,0 to graph 1,1 fillcolor rgb \"grey\" behind ").append(OSChecker.newline);
@@ -393,24 +393,24 @@ public class InversionPlotUtil {
         //                                                                          //
         //////////////////////////////////////////////////////////////////////////////
         
-        script.append("set key top left").append(OSChecker.newline);
+        script.append("set key at "+(minX+0.45*(maxX-minX))+", graph 0.9").append(OSChecker.newline);
         
         // Margins for Star Formation Rate plot
         script.append("set lmargin at screen 0.25").append(OSChecker.newline);
         script.append("set rmargin at screen 0.75").append(OSChecker.newline);
         script.append("set bmargin at screen 0.2").append(OSChecker.newline);
-        script.append("set tmargin at screen 0.55").append(OSChecker.newline);
+        script.append("set tmargin at screen 0.53").append(OSChecker.newline);
         
         // X axis
         script.append("set xlabel \"{/"+OSChecker.getFont()+"=14 Lookback time [Gyr]_{}}\"").append(OSChecker.newline);
         script.append("set mxtics 2").append(OSChecker.newline);
-        script.append("set xtics 1 font \""+OSChecker.getFont()+",12\" out").append(OSChecker.newline);
+        script.append("set xtics 1 font \""+OSChecker.getFont()+",12\" in").append(OSChecker.newline);
         script.append("set xtics format \"% g\"").append(OSChecker.newline);
         
         // Y2 axis
         script.append("set y2label \"{/"+OSChecker.getFont()+"=14 {/Symbol=16 \171}  [N ({/Symbol \\264}10^{"+yexp+"}) yr^{-1}]}\" offset 3,0").append(OSChecker.newline);
         script.append("set y2range [0:"+(ymax*1.2*Math.pow(10,-yexp))+"]").append(OSChecker.newline);
-        script.append("set y2tics 1 font \""+OSChecker.getFont()+",12\" out").append(OSChecker.newline);
+        script.append("set y2tics 1 font \""+OSChecker.getFont()+",12\" in mirror").append(OSChecker.newline);
         script.append("set my2tics 2").append(OSChecker.newline);
 
         
@@ -423,8 +423,9 @@ public class InversionPlotUtil {
         else {
         	// Inversion underway: plot initial and updated SFR for this iteration
         	script.append("plot '" + parent.getPath() + OSChecker.pathSep + updatedSfrFilename + "' u ($1/1E9):(($2+$3)*1E"+(-yexp)+"):(($2-$3)*1E"+(-yexp)+") axes x1y2 w filledcurves fillstyle transparent solid 0.5 ls 3 notitle,\\").append(OSChecker.newline);
-        	script.append("     '" + parent.getPath() + OSChecker.pathSep + updatedSfrFilename + "' u ($1/1E9):($2*1E"+(-yexp)+") axes x1y2 w l lw 2 lc rgb \"red\" title '{/"+OSChecker.getFont()+"=10 Updated SFR}',\\").append(OSChecker.newline);
-        	script.append("     '" + parent.getPath() + OSChecker.pathSep + initialSfrFilename + "' u ($1/1E9):($2*1E"+(-yexp)+") axes x1y2 w l lt 0 lw 1 lc rgb \"black\" title '{/"+OSChecker.getFont()+"=10 Initial SFR}'").append(OSChecker.newline);
+        	script.append("     '" + parent.getPath() + OSChecker.pathSep + updatedSfrFilename + "' u ($1/1E9):($2*1E"+(-yexp)+") axes x1y2 w l lw 2 lc rgb \"red\" title '{/"+OSChecker.getFont()+"=12 Star Formation Rate}',\\").append(OSChecker.newline);
+//        	script.append("     '" + parent.getPath() + OSChecker.pathSep + initialSfrFilename + "' u ($1/1E9):($2*1E"+(-yexp)+") axes x1y2 w l lt 0 lw 1 lc rgb \"black\" title '{/"+OSChecker.getFont()+"=10 Initial SFR}'").append(OSChecker.newline);
+        	script.append("     '" + parent.getPath() + OSChecker.pathSep + initialSfrFilename + "' u ($1/1E9):($2*1E"+(-yexp)+") axes x1y2 w l lt 0 lw 1 lc rgb \"black\" notitle").append(OSChecker.newline);
         }
         
         // Tidy up
@@ -481,7 +482,7 @@ public class InversionPlotUtil {
         	out.write(inversionState.wdlf_model.toString());
         }
         out.close();
-
+        
         out = new BufferedWriter(new FileWriter(new File(parent, obsWDLFFileName)));
         out.write(inversionState.wdlf_obs.toString());
         out.close();
@@ -604,14 +605,14 @@ public class InversionPlotUtil {
         //////////////////////////////////////////////////////////////////////////////
         
         script.append("solarMass = \"M_{"+CharUtil.solar+"}\"").append(OSChecker.newline);
-        script.append("set terminal pngcairo enhanced color crop").append(OSChecker.newline);
+        script.append("set terminal pngcairo enhanced color crop size 1024,1024").append(OSChecker.newline);
         
         script.append("set style line 1 lt 2 lc rgb \"#00AA00\" lw 1").append(OSChecker.newline);
         script.append("set style line 2 lt 3 lc rgb \"blue\" lw 1").append(OSChecker.newline);
         script.append("set style line 3 lt 1 lc rgb \"black\" lw 1").append(OSChecker.newline);
         script.append("set style line 4 lt 1 lc rgb \"grey\" lw 1").append(OSChecker.newline);
         
-        script.append("set size nosquare").append(OSChecker.newline);
+//        script.append("set size 1024,1024").append(OSChecker.newline);
         script.append("set multiplot").append(OSChecker.newline);
         script.append("set key off").append(OSChecker.newline);
         script.append("set tics scale 0.5").append(OSChecker.newline);
@@ -625,7 +626,7 @@ public class InversionPlotUtil {
     	
         // Margins for mass distribution plot
         script.append("set lmargin at screen 0.15").append(OSChecker.newline);
-        script.append("set rmargin at screen 0.25").append(OSChecker.newline);
+        script.append("set rmargin at screen 0.23").append(OSChecker.newline);
         script.append("set bmargin at screen 0.55").append(OSChecker.newline);
         script.append("set tmargin at screen 0.95").append(OSChecker.newline);
         
@@ -683,11 +684,14 @@ public class InversionPlotUtil {
         script.append("set cbtics 1 font \""+OSChecker.getFont()+",12\" nomirror out").append(OSChecker.newline);
         script.append("set mcbtics 2").append(OSChecker.newline);
         script.append("set palette defined (0 \"white\", 0.0001 \"yellow\", 0.001 \"orange\", 0.01 \"red\", 0.1 \"black\")").append(OSChecker.newline);
-        script.append("set cont base").append(OSChecker.newline);
-        script.append("unset clabel").append(OSChecker.newline);
+        
+        // Contour parameters
+//        script.append("set cont base").append(OSChecker.newline);
+//        script.append("unset clabel").append(OSChecker.newline);
         // Plot 5 contours between zero and ztic/5
-        script.append("set cntrparam levels discrete "+Math.pow(10,-zexp-4)+","+Math.pow(10,-zexp-3.5)+","+Math.pow(10,-zexp-3)+","+Math.pow(10,-zexp-2.5)+","+Math.pow(10,-zexp-2)+"").append(OSChecker.newline);
-        script.append("set cntrparam linear").append(OSChecker.newline);
+//        script.append("set cntrparam levels discrete "+Math.pow(10,-zexp-4)+","+Math.pow(10,-zexp-3.5)+","+Math.pow(10,-zexp-3)+","+Math.pow(10,-zexp-2.5)+","+Math.pow(10,-zexp-2)+"").append(OSChecker.newline);
+//        script.append("set cntrparam linear").append(OSChecker.newline);
+        
         script.append("set object 1 rectangle from graph 0,0 to graph 1,1 fillcolor rgb \"grey\" behind ").append(OSChecker.newline);
         script.append("splot '" + parent.getPath() + OSChecker.pathSep + pwdFileName + "' u 1:2:($3*1E"+(-zexp)+") notitle w pm3d").append(OSChecker.newline);
         
@@ -717,36 +721,36 @@ public class InversionPlotUtil {
         //              Plot the marginal magnitude distribution                    //
         //                                                                          //
         //////////////////////////////////////////////////////////////////////////////
+
+        // Margins for WDLF plot
+        script.append("set lmargin at screen 0.25").append(OSChecker.newline);
+        script.append("set rmargin at screen 0.75").append(OSChecker.newline);
+        script.append("set bmargin at screen 0.2").append(OSChecker.newline);
+        script.append("set tmargin at screen 0.53").append(OSChecker.newline);
         
-        script.append("set key top left").append(OSChecker.newline);
-        script.append("set style line 4 lt 1 pt 5 ps 0.5 lc rgb \"red\" lw 1").append(OSChecker.newline);
-        script.append("set style line 5 lt 1 pt 6 ps 0.5 lc rgb \"black\" lw 1").append(OSChecker.newline);
+        script.append("set key at "+(minX + 0.45*(maxX-minX))+", graph 0.9").append(OSChecker.newline);
+        script.append("set style line 4 lt 1 lw 2 pt 5 ps 0.5 lc rgb \"red\"").append(OSChecker.newline);
+        script.append("set style line 5 lt 1 lw 1 pt 7 ps 0.75 lc rgb \"black\"").append(OSChecker.newline);
         // Width of bars on top & bottom of error bars
         script.append("set bar 0.5").append(OSChecker.newline);
         // Handle log plotting of lower error bars that lie at zero
         script.append("f(s,n) = (s-n>0) ? (s-n) : 9E-18").append(OSChecker.newline);
         
-        // Margins for WDLF plot
-        script.append("set lmargin at screen 0.25").append(OSChecker.newline);
-        script.append("set rmargin at screen 0.75").append(OSChecker.newline);
-        script.append("set bmargin at screen 0.2").append(OSChecker.newline);
-        script.append("set tmargin at screen 0.55").append(OSChecker.newline);
-        
         // X axis
         script.append("set xlabel \"{/"+OSChecker.getFont()+"=14 Magnitude ["+filterName+"]}\"").append(OSChecker.newline);
         script.append("set mxtics 2").append(OSChecker.newline);
-        script.append("set xtics 2 font \""+OSChecker.getFont()+",12\" out").append(OSChecker.newline);
+        script.append("set xtics 2 font \""+OSChecker.getFont()+",12\" in").append(OSChecker.newline);
         script.append("set xtics format \"% g\"").append(OSChecker.newline);
         
         // Y2 axis
         script.append("set y2label \"{/"+OSChecker.getFont()+"=14 Log {/Symbol \106} [N Mag^{-1}]}\" offset 3,0").append(OSChecker.newline);
         script.append("set y2range ["+y_range[0]+":"+y_range[1]+"]").append(OSChecker.newline);
-        script.append("set y2tics "+getTicInterval(y_range[0], y_range[1])+" font \""+OSChecker.getFont()+",12\" out").append(OSChecker.newline);
+        script.append("set y2tics "+getTicInterval(y_range[0], y_range[1])+" font \""+OSChecker.getFont()+",12\" in mirror").append(OSChecker.newline);
         script.append("set my2tics 2").append(OSChecker.newline);
         
-        script.append("plot '" + parent.getPath() + OSChecker.pathSep + modelWDLFFileName + "' u 1:(log10($3)) axes x1y2 w l ls 4 title '{/"+OSChecker.getFont()+"=10 Model}',\\").append(OSChecker.newline);
-        script.append(" '" + parent.getPath() + OSChecker.pathSep + obsWDLFFileName + "' u 1:(log10($3)) axes x1y2 w l ls 5 title '{/"+OSChecker.getFont()+"=10 Data}',\\").append(OSChecker.newline);
-        script.append(" '" + parent.getPath() + OSChecker.pathSep + obsWDLFFileName + "' u 1:(log10($3)):(log10(f($3,$4))):(log10($3+$4)) axes x1y2 w yerrorbars ls 5 notitle").append(OSChecker.newline);
+        script.append("plot '" + parent.getPath() + OSChecker.pathSep + modelWDLFFileName + "' u 1:(log10($3)) axes x1y2 w l ls 4 title '{/"+OSChecker.getFont()+"=12 Model}',\\").append(OSChecker.newline);
+//        script.append(" '" + parent.getPath() + OSChecker.pathSep + obsWDLFFileName + "' u 1:(log10($3)) axes x1y2 w l ls 5 notitle,\\").append(OSChecker.newline);
+        script.append(" '" + parent.getPath() + OSChecker.pathSep + obsWDLFFileName + "' u 1:(log10($3)):(log10(f($3,$4))):(log10($3+$4)) axes x1y2 w yerrorbars ls 5 title '{/"+OSChecker.getFont()+"=12 "+inversionState.wdlf_obs.reference+"}'").append(OSChecker.newline);
         
         // Tidy up
         script.append("unset multiplot").append(OSChecker.newline);

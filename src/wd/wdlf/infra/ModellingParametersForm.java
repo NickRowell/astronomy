@@ -1,13 +1,17 @@
 package wd.wdlf.infra;
 
-import ifmr.infra.IFMR;
-import ms.lifetime.infra.PreWdLifetimeModels;
-
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
 
+import ifmr.infra.IFMR;
+import ms.lifetime.infra.PreWdLifetimeModels;
 import photometry.Filter;
 import util.CharUtil;
 import util.ParseUtil;
