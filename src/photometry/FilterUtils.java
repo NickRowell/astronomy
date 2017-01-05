@@ -12,6 +12,8 @@ import java.util.logging.Logger;
 
 import constants.Functions;
 import numeric.functions.Linear;
+import numeric.integration.IntegrableFunction;
+import numeric.integration.IntegrationUtils;
 
 /**
  * Utility methods for {@link Filter}s.
@@ -19,7 +21,6 @@ import numeric.functions.Linear;
  * TODO: cross check Vega constants for filters against external source
  * TODO: cross check effective wavelengths of filters against external source
  * TODO: cross check blackbody colours against external source
- * TODO: use a generalized integrator class for synthetic photometry intergals
  *
  * @author nrowell
  * @version $Id$
@@ -138,53 +139,46 @@ public class FilterUtils {
     /**
      * Compute the effective wavelength of the {@link Filter}.
      * 
-     * TODO: add synthetic photometry integral.
-     * 
+	 * The synthetic photometry integral is:
+	 * 
+	 * F_m  =  INT_0^infinity(l * transmission(l).dl) / INT(transmission(l).dl)
+	 * 
      * @param filter
      * 	The {@link Filter}
      * @return
      * 	The effective wavelength [Angstroms]
      */
-    public static double getEffectiveWavelength(Filter filter) {
+    public static double getEffectiveWavelength(final Filter filter) {
     	
 		// Integration step size, in Angstroms:
 		double l_step = 1.0;
 		
-		// Intergation limits
+		// Integration limits
 		double l_min = filter.lambdaMin;
 		double l_max = filter.lambdaMax;
     	
-		double ls_h  = 0;
-	    double ls_2h = 0;
-	    double s_h  = 0;
-	    double s_2h = 0;
-	    
-	    for(double lambda = l_min; lambda < l_max; lambda += 2*l_step) {
-
-			double t0 = filter.interpolate(lambda);
-			double t1 = filter.interpolate(lambda+l_step);
-			double t2 = filter.interpolate(lambda+2*l_step);
-    	
-    	
-			//Contributions to h sums:
-			ls_h += (lambda*t0 + (lambda+l_step)*t1)*(l_step/2);
-			ls_h += ((lambda+l_step)*t1 + (lambda+2*l_step)*t2)*(l_step/2);
-			
-			s_h += (t0 + t1)*(l_step/2);
-            s_h += (t1 + t2)*(l_step/2);
-            
-			//Contributions to 2h sums
-            ls_2h += (lambda*t0 + (lambda+2*l_step)*t2)*(l_step);
-            s_2h += (t0 + t1)*(l_step);
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return x * filter.interpolate(x);
+			}
 		}
-
-		// Richardson's extrapolation:
-	    double ls = (1.0/3.0)*(4.0*ls_h - ls_2h);
-    	double s  = (1.0/3.0)*(4.0*s_h - s_2h);
-    	
-		double lambda_eff = ls/s;
 		
-    	return lambda_eff;
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x);
+			}
+		}
+		
+    	double lt = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double  t = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+		
+    	return lt/t;
     }
     
 	/**
@@ -193,7 +187,13 @@ public class FilterUtils {
 	 * So computing the zeropoint for a given filter amounts to computing the magnitude
 	 * of Vega in that band, which is done using synthetic photometry.
 	 * 
-	 * TODO: add synthetic photometry intergal to comments.
+	 * The synthetic photometry integral is:
+	 * 
+	 * F_m  =  INT_0^infinity(f_vega(l)*transmission(l).dl) / INT(transmission(l).dl)
+	 * 
+	 * then Vega constant is defined as:
+	 * 
+	 * C_m = 2.5 log_10(F_m)
 	 * 
 	 * @param filter
 	 * 	The {@link Filter} for which to compute the Vega zeropoint. The transmission
@@ -202,84 +202,44 @@ public class FilterUtils {
 	 * @return
 	 * 	The magnitude zeropoint for the {@link Filter} in the Vega system.
 	 */
-	public static double getVegaMagZp(Filter filter) {
+	public static double getVegaMagZp(final Filter filter) {
 
-		Linear vegaSpec = getVegaSpectrum();
+		final Linear vegaSpec = getVegaSpectrum();
         
-		/********************************************************
-
-	        Synthetic photometry integral.
-
-		  Integral is:
-		  
-		  F_m  =  INT_0^infinity(f_vega(l)*transmission(l).dl) / INT(transmission(l).dl)
-
-	          then Vega constant is defined as:
-		  
-		  C_m = 2.5 log_10(F_m)
-
-	        Integrate from first wavelength in filter transmission file to last wavelength.
-
-	        Integrate numerically using trapezium rule with interval halving
-		and Richardson's extrapolation algorithm.
-		Use constant wavelength intervals, interpolating both functions at each point using cubic splines.
-
-		Integration is between first and last points in transmission function
-
-	        ********************************************************/
-
-		// Integration step size, in Angstroms:
-		double l_step = 1.0;
+		// Integration step size [Angstroms]
+		double l_step = 0.5;
 		
-		// Intergation limits
+		// Integration limits [Angstroms]
 		double l_min = filter.lambdaMin;
 		double l_max = filter.lambdaMax;
 		
-		// Two integrals;
-		// f(lambda)S(lambda) - integrated flux
-		// S(lambda)          - normalisation
-
-		double fs_h  = 0;
-		double fs_2h = 0;
-	    double s_h  = 0;
-	    double s_2h = 0;
-
-		for(double lambda = l_min; lambda < l_max; lambda += 2*l_step) {
-
-			double t0 = filter.interpolate(lambda);
-			double t1 = filter.interpolate(lambda+l_step);
-			double t2 = filter.interpolate(lambda+2*l_step);
-			
-			double f0 = vegaSpec.interpolateY(lambda)[0];
-			double f1 = vegaSpec.interpolateY(lambda+l_step)[0];
-			double f2 = vegaSpec.interpolateY(lambda+2*l_step)[0];
-			
-			//Contributions to h sums:
-			fs_h += (f0*t0 + f1*t1)*(l_step/2);
-            fs_h += (f1*t1 + f2*t2)*(l_step/2);
-            
-            s_h += (t0 + t1)*(l_step/2);
-            s_h += (t1 + t2)*(l_step/2);
-
-			//Contributions to 2h sums
-            fs_2h += (f0*t0 + f2*t2)*(l_step);
-            s_2h += (t0 + t1)*(l_step);
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x) * vegaSpec.interpolateY(x)[0];
+			}
 		}
-
-		// Richardson's extrapolation:
-		double fs = (1.0/3.0)*(4.0*fs_h - fs_2h);
-		double s  = (1.0/3.0)*(4.0*s_h  -  s_2h);
 		
-		double vegaZp = 2.5*Math.log10(fs/s);
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x);
+			}
+		}
 		
-		return vegaZp;
+		double ft = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double  t = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+		
+		return 2.5*Math.log10(ft/t);
 	}
 	    
 	/**
 	 * Computes the colour of a blackbody of the given temperature, in the given {@link Filter}s.
 	 * Specifically, compute the <code>band1 - band2</code> value.
-	 * 
-	 * TODO: add synthetic photometry integral
 	 * 
 	 * @param band1
 	 * 	The first {@link Filter}
@@ -299,8 +259,15 @@ public class FilterUtils {
 	 * the absolute scale is arbitrary and the returned value is only useful for computing colours of blackbodies
 	 * in two bands from the difference of the single-band magnitudes.
 	 * 
+	 * The synthetic photometry integral is:
 	 * 
-	 * TODO: add synthetic photometry integral
+	 * F_m  =  INT_0^infinity(f_BB(l)*transmission(l).dl) / INT(transmission(l).dl)
+	 * 
+	 * then magnitude is calculated from:
+	 * 
+	 * m = -2.5*log(F_m) + C_m
+	 * 
+	 * where Vega constants C_m are computed using {@link #getVegaMagZp(Filter)}.
 	 * 
 	 * @param filter
 	 * 	The {@link Filter} for which to determine the blackbody magnitude
@@ -310,30 +277,8 @@ public class FilterUtils {
 	 * 	The magnitude of the blackbody through the given {@link Filter}, in the Vega system.
 	 * 
 	 */
-	public static double blackbodyMagnitude(Filter filter, double T) {
+	public static double blackbodyMagnitude(final Filter filter, final double T) {
 		
-		/********************************************************
-		
-        Synthetic photometry integral.
-
-	  Integral is:
-	  
-	  F_m  =  INT_0^infinity(f_BB(l)*transmission(l).dl) / INT(transmission(l).dl)
-
-          then magnitude is calculated from:
-
-          m = -2.5*log(F_m) + C_m
-
-          where Vega constants are defined at the start of this code.
-
-        Integrate from first wavelength in filter transmission file to last wavelength.
-
-        Integrate numerically using trapezium rule and fixed wavelength intervals,
-        interpolating at each point using cubic splines.
-
-
-        ********************************************************/
-
 		// Integration step size, in Angstroms:
 		double l_step = 1.0;
 		
@@ -341,41 +286,48 @@ public class FilterUtils {
 		double l_min = filter.lambdaMin;
 		double l_max = filter.lambdaMax;
 		
-		double bs_h  = 0.0;   // Contributions to h and 2h sums
-		double bs_2h = 0.0;
-		
-		double s_h  = 0.0;   // Contributions to h and 2h sums
-		double s_2h = 0.0;
-		
-		// Integrate filter over BB curve at temperature T:
-		for(double lambda =l_min; lambda < l_max; lambda += 2.0*l_step) {
-			
-			double t0 = filter.interpolate(lambda + 0*l_step);
-			double t1 = filter.interpolate(lambda + 1*l_step);
-			double t2 = filter.interpolate(lambda + 2*l_step);
-			
-			double bb0 = Functions.planckFunction(T,lambda + 0*l_step);
-			double bb1 = Functions.planckFunction(T,lambda + 1*l_step);
-			double bb2 = Functions.planckFunction(T,lambda + 2*l_step);
-			
-		    bs_h  += (t0*bb0 + t1*bb1)*(l_step/2.0);
-		    bs_h  += (t1*bb1 + t2*bb2)*(l_step/2.0);
-		    bs_2h += (t0*bb0 + t2*bb2)*l_step;
-
-
-		    s_h  += (t0 + t1)*(l_step/2.0);
-		    s_h  += (t1 + t2)*(l_step/2.0);
-		    s_2h += (t0 + t2)*l_step;
-
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x) * Functions.planckFunction(T,x);
+			}
 		}
 		
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x);
+			}
+		}
+		
+		double ft = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double  t = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+		
 		// Vega zeropoint magnitude for the filter
-		double m0 = FilterUtils.getVegaMagZp(filter);
+		double m0 = getVegaMagZp(filter);
 	
-		// Richardson extrapolation
-	    double mag = -2.5*Math.log10(((1.0/3.0)*(4.0*bs_h - bs_2h))/((1.0/3.0)*(4.0*s_h  - s_2h))) + m0;
+		return -2.5*Math.log10(ft/t) + m0;
+	}
 	
-		return mag;
+	
+	/**
+	 * Computes the photon-weighted effective wavenumber for a blackbody source of the
+	 * given temperature.
+	 * 
+	 * 
+	 * 
+	 * @param T
+	 * 	The temperature of the blackbody [K]
+	 * @return
+	 * 	The photon weighted effective wavenumber
+	 */
+	public static double getBlackbodyEffectiveWavenumber(final double T) {
+		// TODO: implement this once Gaia G band transmission function is available
+		return 0.0;
 	}
 
 }

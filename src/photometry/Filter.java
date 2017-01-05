@@ -13,7 +13,10 @@ import numeric.functions.Linear;
 /**
  * Class represents a photometric filter.
  * 
- * TODO: add transmission functions for more filters
+ * The transmission functions are read from plain text files containing two columns. The
+ * first column gives the wavelength in Angstroms, the second gives the transmission in the
+ * [0:1] range.
+ * 
  *
  * @author nrowell
  * @version $Id$
@@ -29,10 +32,17 @@ public enum Filter {
 	R_63F("sss/R_63F.dat", "R_{63F}"),
 	I_N("sss/I_N.dat", "I_{N}"),
 	
+	// SDSS bands
+	SDSS_U("sdss/u.dat", "u"),
+	SDSS_G("sdss/g.dat", "g"),
+	SDSS_R("sdss/r.dat", "r"),
+	SDSS_I("sdss/i.dat", "i"),
+	SDSS_Z("sdss/z.dat", "z"),
+	
 	// Johnson-Kron-Cousins bands
-	U(null,"U"),
-	B(null,"B"),
-	V(null,"V"),
+	U("johnson/U.dat","U"),
+	B("johnson/B.dat","B"),
+	V("johnson/V.dat","V"),
 	R(null,"R"),
 	I(null,"I"),
 	
@@ -84,6 +94,11 @@ public enum Filter {
 	 * SuperCOSMOS bands
 	 */
 	public static Filter[] sss = new Filter[]{Filter.B_J, Filter.R_59F, Filter.R_63F, Filter.I_N};
+	
+	/**
+	 * Sloan Digital Sky Survey bands
+	 */
+	public static Filter[] sdss = new Filter[]{Filter.SDSS_U, Filter.SDSS_G, Filter.SDSS_R, Filter.SDSS_I, Filter.SDSS_Z};
 	
 	/**
 	 * Contains subdirectory path within src/resources/filters where
