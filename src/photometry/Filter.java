@@ -1,17 +1,16 @@
 package photometry;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
 
 import numeric.functions.Linear;
+import util.ParseUtil;
 
 /**
- * Class represents a photometric filter.
+ * Enum represents a photometric filter.
  * 
  * The transmission functions are read from plain text files containing two columns. The
  * first column gives the wavelength in Angstroms, the second gives the transmission in the
@@ -77,7 +76,12 @@ public enum Filter {
 	F775W_ACS(null, "F775W (ACS)"),
 	F814W_ACS("hst/acs_F814W_cleaned.dat", "F814W (ACS)"),
 	F850LP_ACS(null, "F850LP (ACS)"),
-	F892N_ACS(null, "F892N (ACS)")
+	F892N_ACS(null, "F892N (ACS)"),
+	
+	// Gaia nominal bands
+	G("gaia/G_energy.txt","G"),
+	BP("gaia/BP_energy.txt","BP"),
+	RP("gaia/RP_energy.txt","RP")
 	;
 	
 	/**
@@ -99,6 +103,11 @@ public enum Filter {
 	 * Sloan Digital Sky Survey bands
 	 */
 	public static Filter[] sdss = new Filter[]{Filter.SDSS_U, Filter.SDSS_G, Filter.SDSS_R, Filter.SDSS_I, Filter.SDSS_Z};
+	
+	/**
+	 * Gaia nominal passbands
+	 */
+	public static Filter[] gaia = new Filter[]{Filter.G, Filter.BP, Filter.RP};
 	
 	/**
 	 * Contains subdirectory path within src/resources/filters where
@@ -140,59 +149,30 @@ public enum Filter {
 		this.filtername = filtername;
 		this.filename = filename;
 		
+		transmission=null;
+		lambdaMin = 0;
+        lambdaMax = 0;
+		
 		// Don't attempt to load the file if the transmission function is not available
 		if(filename==null) {
-			transmission=null;
-			lambdaMin = 0;
-	        lambdaMax = 0;
 			return;
 		}
 		
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("resources/filters/"+getFilename());
 
-        // Read in data from file
-        String line;
-        
-        // Store values parsed from each line
-        List<double[]> records = new LinkedList<double[]>();
-        
         try(BufferedReader in = new BufferedReader(new InputStreamReader(is)))
         {
-	        while((line=in.readLine())!=null)
-	        {
-	            // Skip commented lines
-	            if(line.substring(0, 1).equals("#"))
-	                continue;
-	            // Open Scanner on line
-	            Scanner scan = new Scanner(line);
-	            // Read wavelength (Angstroms)
-	            double lambda = scan.nextDouble();
-	            // Read transmission
-	            double throughput = scan.nextDouble();
-	            // Add coordinate to List
-	            records.add(new double[]{lambda,throughput});
-	            scan.close();
-	        }
+        	double[][] data = ParseUtil.parseFile(in, ParseUtil.whitespaceDelim, ParseUtil.hashComment);
+        	
+        	// First column contains the wavelength [Angstroms], second column containe the throughput
+	        transmission = new Linear(data[0], data[1]);
+	        lambdaMin = data[0][0];
+	        lambdaMax = data[0][data[0].length-1];
         }
         catch(IOException e )
         {
         	System.out.println("Unable to read filter transmission function!");
         }
-            
-        // Now read out data to arrays
-        double[] lambda  = new double[records.size()];
-        double[] throughput = new double[records.size()];
-            
-        for(int i=0; i<records.size(); i++)
-        {
-            lambda[i]  = records.get(i)[0];
-            throughput[i] = records.get(i)[1];
-        }
-        
-        transmission = new Linear(lambda,throughput);
-        
-        lambdaMin = lambda[0];
-        lambdaMax = lambda[lambda.length-1];
 	}
 	
 	/**
