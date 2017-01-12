@@ -1,8 +1,0 @@
-\begindata
-KERNELS_TO_LOAD = (
-'/opt/spice/kernels/generic/spk/de430.bsp'
-'/opt/spice/kernels/generic/lsk/naif0011.tls'
-)
-
-\begintext
-Comment area.
