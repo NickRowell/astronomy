@@ -1,4 +1,5 @@
 /**
- * Transmission functions for Johnson UBV colour filters, obtained from ftp://obsftp.unige.ch/pub/mermio/filters/curves/ph01.UBVj
+ * Transmission functions for Johnson-Cousins UBVRI bands, obtained from
+ * http://www.aip.de/en/research/facilities/stella/instruments/data/johnson-ubvri-filter-curves
  */
 package resources.filters.johnson;

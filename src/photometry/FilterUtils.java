@@ -14,6 +14,7 @@ import constants.Functions;
 import numeric.functions.Linear;
 import numeric.integration.IntegrableFunction;
 import numeric.integration.IntegrationUtils;
+import utils.SpectroscopicUtils;
 
 /**
  * Utility methods for {@link Filter}s.
@@ -282,7 +283,7 @@ public class FilterUtils {
 		// Integration step size, in Angstroms:
 		double l_step = 1.0;
 		
-		// Intergation limits
+		// Integration limits
 		double l_min = filter.lambdaMin;
 		double l_max = filter.lambdaMax;
 		
@@ -309,25 +310,55 @@ public class FilterUtils {
 		
 		// Vega zeropoint magnitude for the filter
 		double m0 = getVegaMagZp(filter);
-	
+		
 		return -2.5*Math.log10(ft/t) + m0;
 	}
 	
 	
 	/**
 	 * Computes the photon-weighted effective wavenumber for a blackbody source of the
-	 * given temperature.
+	 * given temperature in the given {@link Filter}.
 	 * 
-	 * 
-	 * 
+	 * @param filter
+	 * 	The {@link Filter} used to modulate the blackbody spectrum
 	 * @param T
 	 * 	The temperature of the blackbody [K]
 	 * @return
 	 * 	The photon weighted effective wavenumber
 	 */
-	public static double getBlackbodyEffectiveWavenumber(final double T) {
-		// TODO: implement this once Gaia G band transmission function is available
-		return 0.0;
+	public static double getBlackbodyEffectiveWavenumber(final Filter filter, final double T) {
+
+		// Integration step size, in Angstroms:
+		double l_step = 1.0;
+		
+		// Integration limits
+		double l_min = filter.lambdaMin;
+		double l_max = filter.lambdaMax;
+		
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				// Wavelength in metres
+				double l = x * SpectroscopicUtils.ANGSTROMS_TO_METRES;
+				
+				return (1.0/l) * filter.interpolate(x) * Functions.planckFunction(T,x);
+			}
+		}
+		
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x) * Functions.planckFunction(T,x);
+			}
+		}
+		double numer = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double denom = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+		
+		return numer / denom;
 	}
 
 }

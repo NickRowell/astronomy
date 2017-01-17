@@ -13,7 +13,7 @@ import util.ParseUtil;
  * Enum represents a photometric filter.
  * 
  * The transmission functions are read from plain text files containing two columns. The
- * first column gives the wavelength in Angstroms, the second gives the transmission in the
+ * first column gives the (increasing) wavelength in Angstroms, the second gives the transmission in the
  * [0:1] range.
  * 
  *
@@ -22,39 +22,65 @@ import util.ParseUtil;
  */
 public enum Filter {
 	
-	// Bolometric magnitude is a special filter type
+	/** Bolometric magnitude: a special class of filter */
 	M_BOL(null, "M_{bol}"),
 	
 	// SuperCOSMOS/Schmidt photometric bands
+	
+	/** SuperCOSMOS/Schmidt B_{J} band */
 	B_J("sss/B_J.dat", "B_{J}"),
+	/** SuperCOSMOS/Schmidt R_{59F} band */
 	R_59F("sss/R_59F.dat", "R_{59F}"),
+	/** SuperCOSMOS/Schmidt R_{63F} band */
 	R_63F("sss/R_63F.dat", "R_{63F}"),
+	/** SuperCOSMOS/Schmidt I_{N} band */
 	I_N("sss/I_N.dat", "I_{N}"),
 	
 	// SDSS bands
+	
+	/** SDSS u band */
 	SDSS_U("sdss/u.dat", "u"),
+	/** SDSS g band */
 	SDSS_G("sdss/g.dat", "g"),
+	/** SDSS r band */
 	SDSS_R("sdss/r.dat", "r"),
+	/** SDSS i band */
 	SDSS_I("sdss/i.dat", "i"),
+	/** SDSS z band */
 	SDSS_Z("sdss/z.dat", "z"),
 	
-	// Johnson-Kron-Cousins bands
-	U("johnson/U.dat","U"),
-	B("johnson/B.dat","B"),
-	V("johnson/V.dat","V"),
-	R(null,"R"),
-	I(null,"I"),
+	// Johnson-Cousins bands
+	
+	/** Johnson-Cousins U band */
+	U("johnson/Uj.dat", "U"),
+	/** Johnson-Cousins B band */
+	B("johnson/Bj.dat", "B"),
+	/** Johnson-Cousins V band */
+	V("johnson/Vj.dat", "V"),
+	/** Johnson-Cousins R band */
+	R("johnson/Rj.dat", "R"),
+	/** Johnson-Cousins I band */
+	I("johnson/Ij.dat", "I"),
 	
 	// Stromgren bands
-	u(null,"u"),
-	b(null,"b"),
-	v(null,"v"),
-	y(null,"y"),
+	
+	/** Stromgren u band */
+	u(null, "u"),
+	/** Stromgren b band */
+	b(null, "b"),
+	/** Stromgren v band */
+	v(null, "v"),
+	/** Stromgren y band */
+	y(null, "y"),
 	
 	// IR bands
-	J(null,"J"),
-	H(null,"H"),
-	K(null,"K"),
+	
+	/** Near-infrared J band */
+	J(null, "J"),
+	/** Near-infrared H band */
+	H(null, "H"),
+	/** Near-infrared K band */
+	K(null, "K"),
 	
 	// HST: WFC3 IR bands
 	F110W_WFC3_IR("hst/wfc_f110w.IR.tab_proc","F110W"),
@@ -79,10 +105,19 @@ public enum Filter {
 	F892N_ACS(null, "F892N (ACS)"),
 	
 	// Gaia nominal bands
+	
+	/** Nominal Gaia G band */
 	G("gaia/G_energy.txt","G"),
+	/** Nominal Gaia BP band */
 	BP("gaia/BP_energy.txt","BP"),
+	/** Nominal Gaia RP band */
 	RP("gaia/RP_energy.txt","RP")
 	;
+	
+	/**
+	 * Johnson bandshttp://www.aip.de/en/research/facilities/stella/instruments/data/johnson-ubvri-filter-curves
+	 */
+	public static Filter[] johnson = new Filter[]{U, B, V, R, I};
 	
 	/**
 	 * Stromgren bands.
@@ -164,7 +199,7 @@ public enum Filter {
         {
         	double[][] data = ParseUtil.parseFile(in, ParseUtil.whitespaceDelim, ParseUtil.hashComment);
         	
-        	// First column contains the wavelength [Angstroms], second column containe the throughput
+        	// First column contains the wavelength [Angstroms], second column contains the throughput
 	        transmission = new Linear(data[0], data[1]);
 	        lambdaMin = data[0][0];
 	        lambdaMax = data[0][data[0].length-1];

@@ -32,14 +32,14 @@ public class PlotFilters {
 				"set ylabel 'Transmission'" + OSChecker.newline +
 				"plot -10 notitle";
 		
-		for(Filter type : Filter.sdss)
+		for(Filter type : Filter.johnson)
 		{
 			script += ", '-' w l title '"+type.toString()+"'";
 		}
 		
 		script += OSChecker.newline;
 		
-		for(Filter filter : Filter.sdss)
+		for(Filter filter : Filter.johnson)
 		{
 			
 			for(double lambda = filter.lambdaMin; lambda<filter.lambdaMax; lambda+=lambdaStep)

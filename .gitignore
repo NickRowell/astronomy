@@ -21,3 +21,5 @@
 *.zip
 
 bin/
+
+src/resources/spectro/pickles/hilib.pdf
