@@ -324,7 +324,7 @@ public class FilterUtils {
 	 * @param T
 	 * 	The temperature of the blackbody [K]
 	 * @return
-	 * 	The photon weighted effective wavenumber
+	 * 	The photon weighted effective wavenumber [nm^{-1}]
 	 */
 	public static double getBlackbodyEffectiveWavenumber(final Filter filter, final double T) {
 
@@ -340,8 +340,8 @@ public class FilterUtils {
 		{
 			public double evaluate(double x)
 			{
-				// Wavelength in metres
-				double l = x * SpectroscopicUtils.ANGSTROMS_TO_METRES;
+				// Wavelength in nanometres
+				double l = x / 10;
 				
 				return (1.0/l) * filter.interpolate(x) * Functions.planckFunction(T,x);
 			}
