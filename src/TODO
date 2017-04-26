@@ -1,6 +1,14 @@
 WDLF inverter
 ============
 
+0) Currently in WDLF inversion the error in the magnitude is set to a fixed, constant value. That is not
+   appropriate for many scenarios, such as the WDLF of a cluster, where the objects are all at the same
+   distance (so that the intrinsically-faint ones are also apparently-faint) and the magnitude error of
+   the fainter objects is larger. The algorithm should be updated so that the simulated WDs with fainter
+   magnitudes have a larger assigned random magnitude error. I should figure out the model to use based
+   on the shot noise in the flux.
+
+
 2) Add WDLF (model-obs) residuals to plot
 3) Add plot of chi-squared with each iteration
 
@@ -13,15 +21,6 @@ Move InitialGuessSFR & InitialSFRForm to sfr package, incorporate into the struc
 
 General
 =======
-
-Move all large data files out of the src/resources and into the dedicated data/ directory.
-
-SFR interface is a mess - instead of using a discrete function internally at the base class level, would
-be best to simply specify a bunch of methods that SFR implementations must provide. That way the concrete classes
-are free to use an analytic representation of the SFR which will speed up e.g. drawing creation times, integrating
-the function etc and provide greater accuracy.
-
-Complete merger of proper motion deprojection code & revival of SSS catalogue deprojection class in sss.wdlf package.
 
 WDLF modelling:
  - Forms should not keep a reference to the ModellingState, rather they only keep references to the objects they

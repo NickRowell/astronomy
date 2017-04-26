@@ -156,47 +156,39 @@ public abstract class BaseSfr {
      * so that no additional data file is necessary.
      * 
      * @return
-     * 	String containing Gnuplot script suitable for plotting the SFR model. This needs to be saved to file then
-     * invoked using {@link infra.io.Gnuplot#executeScript(java.io.File)}.
+     * 	String containing a standalone Gnuplot script suitable for plotting the SFR model.
      */
     public String getGnuplotScript() {
     	
         // Get scale factor for SFR to make scale range 0:10
         double sfr_max = getMaxRate();
         int sfr_exp = (int)Math.floor(Math.log10(sfr_max));
-        
-        String script = 
-            "set terminal pngcairo enhanced color size 410,350"+OSChecker.newline +
-            // Plot size
-            //"set size square"+OSChecker.newline +
-            // Configure all tics
-            "set tics out"+OSChecker.newline+
-            // Configure X axis
-            "set xrange [0:"+t_max*1.1/1e9+"] reverse"+OSChecker.newline+
-            "set xlabel \"{/"+OSChecker.getFont()+"=14 Lookback time [Gyr]}\""+OSChecker.newline+
-            "set mxtics 2"+OSChecker.newline+
-            "set xtics 2 font \""+OSChecker.getFont()+",10\""+OSChecker.newline+
-            // Configure Y axis
-            "set yrange [0:"+(sfr_max*1.2*Math.pow(10,-sfr_exp))+"]"+OSChecker.newline+
-            "set ytics  font \""+OSChecker.getFont()+",10\""+OSChecker.newline+
-            "set mytics 2"+OSChecker.newline+
-            "set ylabel \"{/"+OSChecker.getFont()+"=14 SFR [N({/Symbol \\264}10^{"+sfr_exp+"}) / yr]}\" offset 0,0"+OSChecker.newline+
-            // Line style for WDLF
-            "set style line 1 lt 1 pt 5 ps 0.5  lc rgb \"black\" lw 1"+OSChecker.newline+
-            "set key top left Left"+OSChecker.newline+
-            "plot 	'-' u ($1/1E9):($2*1E"+(-sfr_exp)+") w l ls 1 notitle"+OSChecker.newline;
+
+		StringBuilder output = new StringBuilder();
+
+		output.append("set terminal pngcairo enhanced color size 410,350").append(OSChecker.newline);
+
+		// Configure X axis
+		output.append("set xrange [0:"+t_max*1.1/1e9+"] reverse").append(OSChecker.newline);
+		output.append("set xlabel \"{/"+OSChecker.getFont()+"=14 Lookback time [Gyr]}\"").append(OSChecker.newline);
+		output.append("set mxtics 2").append(OSChecker.newline);
+		output.append("set xtics 2 font \""+OSChecker.getFont()+",10\" out").append(OSChecker.newline);
+		
+		// Configure Y axis
+		output.append("set yrange [0:"+(sfr_max*1.2*Math.pow(10,-sfr_exp))+"]").append(OSChecker.newline);
+		output.append("set ytics  font \""+OSChecker.getFont()+",10\"").append(OSChecker.newline);
+		output.append("set mytics 2").append(OSChecker.newline);
+		output.append("set ylabel \"{/"+OSChecker.getFont()+"=14 SFR [N({/Symbol \\264}10^{"+sfr_exp+"}) / yr]}\" offset 0,0").append(OSChecker.newline);
+		
+		output.append("set style line 1 lt 1 pt 5 ps 0.5  lc rgb \"black\" lw 1").append(OSChecker.newline);
+		output.append("set key top left Left").append(OSChecker.newline);
+		output.append("plot 	'-' u ($1/1E9):($2*1E"+(-sfr_exp)+") w l ls 1 notitle").append(OSChecker.newline);
+		
+		// Append the data inline
+        output.append(this.toString());
+        output.append("e").append(OSChecker.newline);
             
-            // Now append SFR data to script
-            StringBuilder output = new StringBuilder();
-            
-            output.append(this.toString());
-            
-            // End of inline data
-            output.append("e").append(OSChecker.newline);
-            
-            script = script.concat(output.toString());
-            
-        return script;
+        return output.toString();
     }
     
 }

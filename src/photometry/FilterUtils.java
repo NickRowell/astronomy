@@ -14,7 +14,6 @@ import constants.Functions;
 import numeric.functions.Linear;
 import numeric.integration.IntegrableFunction;
 import numeric.integration.IntegrationUtils;
-import utils.SpectroscopicUtils;
 
 /**
  * Utility methods for {@link Filter}s.
@@ -234,10 +233,83 @@ public class FilterUtils {
 		
 		double ft = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
 		double  t = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
-		
+
 		return 2.5*Math.log10(ft/t);
 	}
-	    
+	
+	/**
+	 * Performs synthetic photometry on the given spectrum using the given filter.
+	 * 
+	 * The synthetic photometry integral is:
+	 * 
+	 * F =  INT_0^infinity(spectrum(l)*transmission(l).dl) / INT(transmission(l).dl)
+	 * 
+	 * then magnitude is defined as:
+	 * 
+	 * m = 2.5 log_10(F) + C0
+	 * 
+	 * where C0 is the zeropoint for the filter.
+	 * 
+	 * @param spectrum
+	 * 	A {@link Linear} object representing the source spectrum (F-lambda; Angstroms)
+	 * @param filter
+	 * 	The {@link Filter} used to observe the spectrum
+	 * @return
+	 * 	The magnitude of the source in the given band.
+	 */
+	public static double getSyntheticMagnitude(final Linear spectrum, final Filter filter) {
+
+		// Integration step size [Angstroms]
+		double l_step = 0.5;
+		
+		// Integration limits [Angstroms]
+		double l_min = filter.lambdaMin;
+		double l_max = filter.lambdaMax;
+		
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x) * spectrum.interpolateY(x)[0];
+			}
+		}
+		
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x);
+			}
+		}
+		
+		double ft = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double  t = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+
+		// Vega zeropoint magnitude for the filter
+		double m0 = getVegaMagZp(filter);
+		
+		return -2.5*Math.log10(ft/t) + m0;
+	}
+	
+	/**
+	 * Performs synthetic photometry to obtain the colour of the source in the given
+	 * bands.
+	 * 
+	 * @param spectrum
+	 * 	A {@link Linear} object representing the source spectrum (F-lambda; Angstroms)
+	 * @param band1
+	 * 	The first {@link Filter}
+	 * @param band2
+	 * 	The second {@link Filter}
+	 * @return
+	 * 	The colour of the source in the given bands (band1 - band2).
+	 */
+	public static double getSyntheticColour(final Linear spectrum, final Filter band1, final Filter band2) {
+		return getSyntheticMagnitude(spectrum, band1) - getSyntheticMagnitude(spectrum, band2);
+	}
+	
 	/**
 	 * Computes the colour of a blackbody of the given temperature, in the given {@link Filter}s.
 	 * Specifically, compute the <code>band1 - band2</code> value.
@@ -361,4 +433,48 @@ public class FilterUtils {
 		return numer / denom;
 	}
 
+	/**
+	 * Computes the photon-weighted effective wavenumber for a given source in the given {@link Filter}.
+	 * 
+	 * @param spectrum
+	 * 	A {@link Linear} object representing the source spectrum (F-lambda; Angstroms)
+	 * @param filter
+	 * 	The {@link Filter} used to observe the spectrum
+	 * @return
+	 * 	The photon weighted effective wavenumber [nm^{-1}]
+	 */
+	public static double getEffectiveWavenumber(final Linear spectrum, final Filter filter) {
+
+		// Integration step size, in Angstroms:
+		double l_step = 1.0;
+		
+		// Integration limits
+		double l_min = filter.lambdaMin;
+		double l_max = filter.lambdaMax;
+		
+		// Function to represent the numerator in the synthetic photometry integral
+		class Numerator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				// Wavelength in nanometres
+				double l = x / 10;
+				
+				return (1.0/l) * filter.interpolate(x) * spectrum.interpolateY(x)[0];
+			}
+		}
+		
+		// Function to represent the denominator in the synthetic photometry integral
+		class Denominator implements IntegrableFunction
+		{
+			public double evaluate(double x)
+			{
+				return filter.interpolate(x) * spectrum.interpolateY(x)[0];
+			}
+		}
+		double numer = IntegrationUtils.integrate(new Numerator(), l_min, l_max, l_step);
+		double denom = IntegrationUtils.integrate(new Denominator(), l_min, l_max, l_step);
+		
+		return numer / denom;
+	}
 }

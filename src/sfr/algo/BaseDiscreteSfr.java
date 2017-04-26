@@ -65,22 +65,23 @@ public abstract class BaseDiscreteSfr extends BaseSfr {
      */
 	@Override
 	public String toString() {
+		
         StringBuilder output = new StringBuilder();
         
         // Point at zero at the lower edge of the SFR histogram (tmin)
-        output = output.append(data.getBinLowerEdge(0)).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
+        output.append(data.getBinLowerEdge(0)).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
         
         // Loop over all SFR points
         for(int i=0; i<data.size(); i++)
         {
-            output = output.append(data.getBinLowerEdge(i)).append(" ").append(data.getBinContents(i)).append(" ")
+            output.append(data.getBinLowerEdge(i)).append(" ").append(data.getBinContents(i)).append(" ")
             		.append(data.getBinUncertainty(i)).append(OSChecker.newline);
-            output = output.append(data.getBinUpperEdge(i)).append(" ").append(data.getBinContents(i)).append(" ")
+            output.append(data.getBinUpperEdge(i)).append(" ").append(data.getBinContents(i)).append(" ")
             		.append(data.getBinUncertainty(i)).append(OSChecker.newline);
         }
         
         // Point at zero at the upper edge of the SFR histogram (onset of star formation)
-        output = output.append(data.getBinUpperEdge(data.size()-1)).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
+        output.append(data.getBinUpperEdge(data.size()-1)).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
         
         return output.toString();
 	}

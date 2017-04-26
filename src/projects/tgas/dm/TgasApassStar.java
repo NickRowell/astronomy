@@ -100,7 +100,30 @@ public class TgasApassStar {
 	 * Error on the APASS B magnitude [mag]
 	 */
 	public final double e_b_mag;
-
+	
+	/**
+	 * Default constructor for the {@link TgasApassStar}.
+	 */
+	public TgasApassStar() {
+		this.sourceId = Long.MIN_VALUE;
+		this.ra = Double.NaN;
+		this.ra_error = Double.NaN;
+		this.dec = Double.NaN;
+		this.dec_error = Double.NaN;
+		this.parallax = Double.NaN;
+		this.parallax_error = Double.NaN;
+		this.pmra = Double.NaN;
+		this.pmra_error = Double.NaN;
+		this.pmdec = Double.NaN;
+		this.pmdec_error = Double.NaN;
+		this.astrometric_excess_noise = Double.NaN;
+		this.phot_g_mean_mag = Double.NaN;
+		this.v_mag = Double.NaN;
+		this.e_v_mag = Double.NaN;
+		this.b_mag = Double.NaN;
+		this.e_b_mag = Double.NaN;
+	}
+	
 	/**
 	 * Main constructor for the {@link TgasApassStar}.
 	 * 

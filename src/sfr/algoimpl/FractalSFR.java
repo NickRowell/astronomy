@@ -159,11 +159,18 @@ public class FractalSFR extends BaseDiscreteSfr {
      * Recursive midpoint displacement algorithm for generation of fractals.
      * 
      * @param fractal
+     * 	The array containing the data to be displaced.
      * @param A
+     * 	Starting index of the range, the midpoint of which is to be displaced.
      * @param B
+     * 	Ending index of the range, the midpoint of which is to be displaced.
      * @param init_std
+     * 	Initial standard deviation, i.e. the RMS displacement at the top level. The RMS displacement added
+     * at the present level is scaled down accordingly.
      * @param h
+     * 	The Hurst parameter.
      * @param n
+     * 	The scale factor.
      */
     private static void recursiveMidpointDisplacement(double[] fractal, int A, int B, double init_std, double h, int n) {
         

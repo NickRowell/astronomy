@@ -23,3 +23,6 @@
 bin/
 
 src/resources/spectro/pickles/hilib.pdf
+
+# Ignore backups created by text editore etc
+*~

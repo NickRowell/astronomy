@@ -60,6 +60,11 @@ public class Units
     public static final double KILOMETRES_PER_SECOND_TO_PARSECS_PER_YEAR =  Units.KM_TO_PC / SECONDS_TO_JULIAN_YEARS;
 	
     /**
+     * Converts velocities from kilometres per second to metres per year.
+     */
+    public static final double KILOMETRES_PER_SECOND_TO_METRES_PER_YEAR =  1000.0 / SECONDS_TO_JULIAN_YEARS;
+	
+    /**
      * Converts angular velocities from km/s/kpc to rad/yr.
      * 1.0227047347441424E-9
      */

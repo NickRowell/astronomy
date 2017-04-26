@@ -92,16 +92,16 @@ public class ConstantSFR extends BaseSfr {
 		StringBuilder output = new StringBuilder();
 		
 		// Point at (t_min, 0)
-		output = output.append(t_min).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
+		output.append(t_min).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
 		
 		// Point at (t_min, rate)
-		output = output.append(t_min).append(" ").append(rate).append(" ").append(0).append(OSChecker.newline);
+		output.append(t_min).append(" ").append(rate).append(" ").append(0).append(OSChecker.newline);
 
 		// Point at (t_max, rate)
-		output = output.append(t_max).append(" ").append(rate).append(" ").append(0).append(OSChecker.newline);
+		output.append(t_max).append(" ").append(rate).append(" ").append(0).append(OSChecker.newline);
 		
 		// Point at (t_max, 0)
-		output = output.append(t_max).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
+		output.append(t_max).append(" ").append(0).append(" ").append(0).append(OSChecker.newline);
 		
 		return output.toString();
 	}

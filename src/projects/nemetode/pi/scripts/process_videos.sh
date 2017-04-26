@@ -57,6 +57,9 @@ ssh CJ1@${remote_ip} 'shutdown -s'
 # Make compressed video from the raw video for each clip
 cd ${local_dir}
 
+# Purge the files beginning T*, which are the temporary circular buffers
+rm T*
+
 echo $(date) "> Compressing the video files" >> ${logfile}
 
 # Following command prevents $AVI from resolving to '*.avi' if there are no

@@ -11,9 +11,6 @@ import Jama.Matrix;
  * Utilities for astrometry.
  *
  * TODO: test the proper motion conversion method against known values
- * TODO: introduce JUnit
- * TODO: push to github repository
- *
  *
  * @author nrowell
  * @version $Id$
@@ -247,13 +244,9 @@ public class AstrometryUtils
 	}
 	
 	/**
-	 * TODO: test this
-	 * TODO: provide the inverse transformation
-	 * TODO: write a general method for transforming angular motions
-	 * 
 	 * Converts position and proper motion from Equatorial frame to Galactic frame.
 	 * 
-	 * Follows the derivation presented in 
+	 * Equivalent to the method presented in 
 	 * 
 	 * "Transformation of the equatorial proper motion to the galactic system"
 	 * Radoslaw Poleski (2013) [arXiv:1306.2945v2]
@@ -262,14 +255,14 @@ public class AstrometryUtils
 	 * @param dec	Declination (Equatorial) [radians]
 	 * @param mu_acosd	Angular (proper) motion parallel to equator [radians/yr]
 	 * @param mu_d	Angular (proper) motion perpendicular to equator [radians/yr]
-	 * @return		Array containing components of the proper motion in the Galactic frame [radians/yr]
+	 * @return		Array containing components of the position [radians] and proper motion in the Galactic frame [radians/yr]
 	 */
 	public static double[] convertPositionAndProperMotionEqToGal(double ra, double dec, double mu_acosd, double mu_d)
 	{
 		// Alternative method:
 		double[] posAndMuGal = convertPositionAndProperMotion(ra, dec, mu_acosd, mu_d, Galactic.r_G_E);
 		
-		// Method from Radoslaw Poleski (2013)
+		// Equivalent method from Radoslaw Poleski (2013)
 		double c1 = Math.sin(Galactic.NGPdec) * Math.cos(dec) - Math.cos(Galactic.NGPdec) * Math.sin(dec) * Math.cos(ra - Galactic.NGPra);
 		double c2 = Math.cos(Galactic.NGPdec) * Math.sin(ra - Galactic.NGPra);
 		double cos_b = Math.sqrt(c1*c1 + c2*c2);
@@ -284,14 +277,28 @@ public class AstrometryUtils
 //		System.out.println("mu_d     = "+mu_d*RADIANS_TO_MILLIARCSEC);
 //
 //		System.out.println("\nGalactic proper motions by Poleski method:");
-//		System.out.println("mu_lcosb = " + mu_lcosb*RADIANS_TO_MILLIARCSEC);
-//		System.out.println("mu_b     = " + mu_b*RADIANS_TO_MILLIARCSEC);
-//		
+//		System.out.println("mu_lcosb = " + mu_lcosb*Units.RADIANS_TO_MILLIARCSEC);
+//		System.out.println("mu_b     = " + mu_b*Units.RADIANS_TO_MILLIARCSEC);
+		
 //		System.out.println("\nGalactic proper motions by transformation and projection method:");
-//		System.out.println("mu_lcosb = "+posAndMuGal[2]*RADIANS_TO_MILLIARCSEC);
-//		System.out.println("mu_b     = "+posAndMuGal[3]*RADIANS_TO_MILLIARCSEC);
+//		System.out.println("mu_lcosb = "+posAndMuGal[2]*Units.RADIANS_TO_MILLIARCSEC);
+//		System.out.println("mu_b     = "+posAndMuGal[3]*Units.RADIANS_TO_MILLIARCSEC);
 		
 		return new double[]{posAndMuGal[0], posAndMuGal[1], mu_lcosb, mu_b};
+	}
+	
+	/**
+	 * Converts position and proper motion from Galactic frame to Equatorial frame.
+	 * 
+	 * @param l			Galactic longitude [radians]
+	 * @param b			Galactic latitude [radians]
+	 * @param mu_lcosb	Angular (proper) motion parallel to Galactic equator  [radians/yr]
+	 * @param mu_b		Angular (proper) motion perpendicular to Galactic equator [radians/yr]
+	 * @return			Array containing components of the position [radians] and proper motion in the Equatorial frame [radians/yr]
+	 */
+	public static double[] convertPositionAndProperMotionGalToEq(double l, double b, double mu_lcosb, double mu_b)
+	{
+		return convertPositionAndProperMotion(l, b, mu_lcosb, mu_b, Galactic.r_E_G);
 	}
 	
 	/**
@@ -300,17 +307,17 @@ public class AstrometryUtils
 	 * Equatorial frame just for convenience.
 	 * 
 	 * Uses the following relations between the angular and cartesian coordinates:
-	 * 
-	 * x^{dot} = -cos(ra)*sin(dec)*mu_d - sin(ra)*mu_acosd
-	 * y^{dot} = -sin(ra)*sin(dec)*mu_d + cos(ra)*mu_acosd
-	 * z^{dot} = cos(dec)*mu_d
-	 * 
+	 * <p><ul>
+	 * <li> x^{dot} = -cos(ra)*sin(dec)*mu_d - sin(ra)*mu_acosd
+	 * <li> y^{dot} = -sin(ra)*sin(dec)*mu_d + cos(ra)*mu_acosd
+	 * <li> z^{dot} = cos(dec)*mu_d
+	 * </ul><p>
 	 * @param d		Distance [pc]
 	 * @param ra	Right ascension (Equatorial) [radians]
 	 * @param dec	Declination (Equatorial) [radians]
 	 * @param mu_acosd	Angular (proper) motion parallel to equator [radians/yr]
 	 * @param mu_d	Angular (proper) motion perpendicular to equator [radians/yr]
-	 * @return		Array containing components of the proper motion vector [km/s]
+	 * @return		A 3x1 JAMA Matrix containing components of the proper motion vector [km/s]
 	 */
 	public static Matrix getTangentialVelocityVector(double d, double ra, double dec, double mu_acosd, double mu_d) {
 		
@@ -333,21 +340,22 @@ public class AstrometryUtils
 	 * given distance.
 	 * 
 	 * Uses the following relations between the angular and cartesian coordinates:
-	 * 
-	 * x^{dot} = -cos(ra)*sin(dec)*mu_d - sin(ra)*mu_acosd
-	 * y^{dot} = -sin(ra)*sin(dec)*mu_d + cos(ra)*mu_acosd
-	 * z^{dot} = cos(dec)*mu_d
-	 * 
+	 * <p><ul>
+	 * <li> x^{dot} = -cos(ra)*sin(dec)*mu_d - sin(ra)*mu_acosd
+	 * <li> y^{dot} = -sin(ra)*sin(dec)*mu_d + cos(ra)*mu_acosd
+	 * <li> z^{dot} = cos(dec)*mu_d
+	 * </ul><p>
 	 * so:
-	 * 
-	 * mu_d = z^{dot} / cos(dec)
-	 * mu_acosd = y^{dot} * cos(ra) - x^{dot} * sin(ra)
-	 * 
+	 * <p><ul>
+	 * <li> mu_d = z^{dot} / cos(dec)
+	 * <li> mu_acosd = y^{dot} * cos(ra) - x^{dot} * sin(ra)
+	 * </ul><p>
 	 * @param d		Distance [pc]
 	 * @param ra	Right ascension of the target position [radians]
 	 * @param dec	Declination of the target position [radians]
 	 * @param vtan	Tangential velocity vector [km/s]
-	 * @return		The angular velocity (proper motion) parallel and perpendicular to the equator [radians/yr]
+	 * @return		The angular velocity (proper motion) parallel and perpendicular to the equator (i.e.
+	 * 				includes the cos(dec) factor in the motion parallel to the equator) [radians/yr]
 	 */
 	public static double[] getProperMotions(double d, double ra, double dec, Matrix vtan) {
 		
@@ -429,10 +437,7 @@ public class AstrometryUtils
 	public static Matrix getProjectionMatrixA(double ra, double dec) {
 		// Unit vector pointing towards the point
 		Matrix r = sphericalPolarToCartesian(1.0, ra, dec);
-		
-		Matrix A = Matrix.identity(3, 3).minus(r.times(r.transpose()));
-		
-		return A;
+		return Matrix.identity(3, 3).minus(r.times(r.transpose()));
 	}
 	
 	/**

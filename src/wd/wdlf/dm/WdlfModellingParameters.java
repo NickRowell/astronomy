@@ -78,6 +78,9 @@ public class WdlfModellingParameters {
     
     /**
      * Observational error on magnitude.
+     * 
+     * TODO: replace this with a function that allows fainter objects to have larger magnitude errors.
+     * 
      */
     private double sigM;
     
