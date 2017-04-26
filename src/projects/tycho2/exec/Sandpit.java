@@ -21,7 +21,7 @@ public class Sandpit {
 	 */
 	public static void main(String[] args) {
 		
-		Collection<Tycho2Star> tycho2Stars = Tycho2Utils.loadHipCatalogue();
+		Collection<Tycho2Star> tycho2Stars = Tycho2Utils.loadTycho2Catalogue();
 		
 		System.out.println("Got "+tycho2Stars.size()+" Tycho2Stars");
 	}

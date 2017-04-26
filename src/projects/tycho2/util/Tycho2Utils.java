@@ -42,16 +42,14 @@ public class Tycho2Utils {
 	 * @return
 	 * 	List of {@link Tycho2Star}s read from the data file.
 	 */
-	public static Collection<Tycho2Star> loadHipCatalogue() {
+	public static Collection<Tycho2Star> loadTycho2Catalogue() {
 		
 		// Get the set of Tycho-2 catalogue files
 		Collection<File> files = new LinkedList<>();
 		for(int i=0; i<20; i++) {
 			File file = new File(tycho2CatDir, String.format("tyc2.dat.%02d", i));
-			System.out.println("Added File "+file.getAbsolutePath());
 			files.add(file);
 		}
-//		files.add(new File(tycho2CatDir, "tmp.dat"));
 		
 		// Read the file and load all the contents to a list of Tycho2Star
 		List<Tycho2Star> tycho2Stars = new LinkedList<>();
