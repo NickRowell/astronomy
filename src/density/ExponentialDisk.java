@@ -2,7 +2,7 @@ package density;
 
 import constants.Galactic;
 import Jama.Matrix;
-import utils.AstrometryUtils;
+import astrometry.util.AstrometryUtils;
 
 /**
  * Represents populations whose density falls off as an exponential
@@ -11,22 +11,21 @@ import utils.AstrometryUtils;
  * @author nrowell
  *
  */
-public class ExponentialDisk extends DensityProfile
-{
+public class ExponentialDisk extends DensityProfile {
 	/**
 	 * Scaleheight of disk [parsec].
 	 */
 	double H;
 	
-	public ExponentialDisk(double pH)
-	{
+	public ExponentialDisk(double pH) {
 		H = pH;
 	}
 	
-	
-	
-	public double getDensity(double r, double ra, double dec)
-	{
+	/**
+	 * {@inheritDoc}
+	 */
+	public double getDensity(double r, double ra, double dec) {
+		
 		// Position vector of point in Cartesian coordinates, equatorial frame:
 		Matrix r_E = AstrometryUtils.sphericalPolarToCartesian(r, ra, dec);
 		
@@ -38,14 +37,12 @@ public class ExponentialDisk extends DensityProfile
 		
 		// Apply exponential density model.
 		return Math.exp(-Math.abs(z)/H);
-		
 	}
 	
 	/**
 	 * Text description of profile.
 	 */
-	public String toString()
-	{
+	public String toString() {
 		return String.format("Exponential disk, scaleheight = %f [pc]", H);
 	}
 }

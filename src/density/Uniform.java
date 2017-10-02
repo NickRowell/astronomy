@@ -5,8 +5,7 @@ package density;
  * @author nrowell
  *
  */
-public class Uniform extends DensityProfile
-{
+public class Uniform extends DensityProfile {
 
 	/**
 	 * Uniform density profile has no parameters.
@@ -16,16 +15,14 @@ public class Uniform extends DensityProfile
 	/**
 	 * Uniform population; density relative to sun equals one.
 	 */
-	public double getDensity(double r, double ra, double dec)
-	{
+	public double getDensity(double r, double ra, double dec) {
 		return 1.0;
 	}
 	
 	/**
 	 * Text description of profile.
 	 */
-	public String toString()
-	{
+	public String toString() {
 		return "Uniform";
 	}
 	

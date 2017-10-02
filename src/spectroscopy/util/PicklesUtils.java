@@ -1,4 +1,4 @@
-package spectroscopy.utils;
+package spectroscopy.util;
 
 import java.io.BufferedReader;
 import java.io.File;

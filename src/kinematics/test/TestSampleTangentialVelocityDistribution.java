@@ -9,13 +9,13 @@ import kinematics.SampleTangentialVelocityDistribution;
 import kinematics.TangentialVelocityDistribution;
 import numeric.data.Histogram;
 import numeric.functions.PositiveLinear;
+import photometry.util.PhotometryUtils;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 import density.DensityProfile;
 import density.Uniform;
 import survey.SurveyVolume;
-import utils.AstrometryUtils;
-import utils.MagnitudeUtils;
 
 /**
  * This class computes the sample tangential velocity distribution using a Monte Carlo
@@ -45,8 +45,8 @@ public class TestSampleTangentialVelocityDistribution
 		double M = 12;				  // Absolute magnitude (used to restrict distance range)
 		
 		// Distance limits arising from apparent magnitude thresholds [parsecs].
-		double d_min_m = MagnitudeUtils.getDistance(m_min, M);
-		double d_max_m = MagnitudeUtils.getDistance(m_max, M);
+		double d_min_m = PhotometryUtils.getDistance(m_min, M);
+		double d_max_m = PhotometryUtils.getDistance(m_max, M);
 		
 		// Upper limit on tangential velocity, from maximum distance and upper proper motion limit [km/s]
 		double vt_max = AstrometryUtils.getVtFromMuAndD(mu_max, d_max_m);

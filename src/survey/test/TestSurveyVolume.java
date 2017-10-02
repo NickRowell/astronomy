@@ -9,13 +9,13 @@ import kinematics.TangentialVelocityDistribution;
 import numeric.data.Histogram;
 import numeric.functions.Linear;
 import numeric.functions.PositiveLinear;
+import photometry.util.PhotometryUtils;
 import survey.SurveyVolume;
-import utils.AstrometryUtils;
-import utils.MagnitudeUtils;
 import constants.Galactic;
 import density.DensityProfile;
 import density.Uniform;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 
 public class TestSurveyVolume
 {

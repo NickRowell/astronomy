@@ -15,25 +15,28 @@ import java.util.logging.Logger;
 import org.jfree.chart.ChartUtilities;
 import org.jfree.chart.JFreeChart;
 
+import astrometry.util.AstrometryUtils;
 import projections.Aitoff;
 import projections.util.ProjectionUtil;
 import projects.tycho2.dm.Tycho2Star;
 import projects.tycho2.util.Tycho2Utils;
+import projects.ybsc.dm.YaleBscStar;
+import projects.ybsc.util.YaleBscUtils;
 
 /**
- * This class provides an application that processes the Tycho-2 catalogue to generate a reference
+ * This class provides an application that processes the Yale Bright Star Catalogue to generate a reference
  * star catalogue, stored either as an ASCII or binary file, that is suitable for use with Asteria
  * for use in calibrating the camera.
  *
  * @author nrowell
  * @version $Id$
  */
-public class CreateReferenceStarCatalogue {
+public class CreateYaleBscReferenceStarCatalogue {
 
 	/**
 	 * The Logger
 	 */
-    protected static Logger logger = Logger.getLogger(CreateReferenceStarCatalogue.class.getCanonicalName());
+    protected static Logger logger = Logger.getLogger(CreateYaleBscReferenceStarCatalogue.class.getCanonicalName());
     
     /**
      * The output directory to store the reference star catalogue and sky projection
@@ -41,20 +44,20 @@ public class CreateReferenceStarCatalogue {
     static File outputDir = new File("/home/nrowell/Temp/");
     
     /**
-     * Faint VT magnitude limit
-     */
-    static double magLimit = 7.0;
-    
-    /**
      * A {@link Comparator} used to sort the stars in the reference catalogue according to
      * declination or right ascension as desired.
      */
-    static Comparator<Tycho2Star> tycStarComparator = new Comparator<Tycho2Star>() {
+    static Comparator<YaleBscStar> yaleBscStarComparator = new Comparator<YaleBscStar>() {
 		@Override
-		public int compare(Tycho2Star o1, Tycho2Star o2) {
+		public int compare(YaleBscStar o1, YaleBscStar o2) {
+			
+			double ra1 = AstrometryUtils.hmsToRadians(o1.RAh2000, o1.RAm2000, o1.RAs2000);
+			double ra2 = AstrometryUtils.hmsToRadians(o2.RAh2000, o2.RAm2000, o2.RAs2000);
+			
 			// Sort according to right ascension
-			return Double.compare(o1.RAdeg, o2.RAdeg);
-		}};
+			return Double.compare(ra1, ra2);
+		}
+	};
     
 	/**
 	 * Main application entry point.
@@ -63,33 +66,23 @@ public class CreateReferenceStarCatalogue {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
+
+		// Load the Yale Bright Star Catalogue objects
+		Collection<YaleBscStar> yaleBscStars = YaleBscUtils.loadYaleBrightStarCatalogue();
 		
-		// Load the Tycho-2 catalogue stars
-		Collection<Tycho2Star> allTycho2Stars = Tycho2Utils.loadTycho2Catalogue();
-		
-		logger.info("Got "+allTycho2Stars.size()+" Tycho2Stars in total");
+		logger.info("Got "+yaleBscStars.size()+" YaleBscStars in total");
 		
 		// Filter the stars according to magnitude and any other fields that we need
-		Set<Tycho2Star> selectedTycho2Stars = new TreeSet<>(tycStarComparator);
+		Set<YaleBscStar> selectedTycho2Stars = new TreeSet<>(yaleBscStarComparator);
 		
-		for(Tycho2Star tyc2Star : allTycho2Stars) {
+		for(YaleBscStar yaleBrightStar : yaleBscStars) {
 			
-			// Select stars with valid mean RA and dec
-			if(Double.isNaN(tyc2Star.RAmdeg) || Double.isNaN(tyc2Star.DEmdeg)) {
+			// Select objects with a valid coordinates. This rules out a few novae, 47 Tuc etc.
+			if(yaleBrightStar.RAh2000 == Integer.MIN_VALUE) {
 				continue;
 			}
 			
-			// Select stars with both BT and VT magnitudes
-			if(Double.isNaN(tyc2Star.BTmag) || Double.isNaN(tyc2Star.VTmag)) {
-				continue;
-			}
-			
-			// Select stars brighter that the magnitude limit
-			if(tyc2Star.VTmag > magLimit) {
-				continue;
-			}
-			
-			selectedTycho2Stars.add(tyc2Star);
+			selectedTycho2Stars.add(yaleBrightStar);
 		}
 
 		logger.info("Selected "+selectedTycho2Stars.size()+" Tycho2Stars for the reference catalogue");
@@ -98,15 +91,21 @@ public class CreateReferenceStarCatalogue {
 		BufferedWriter out = new BufferedWriter(new FileWriter( new File(outputDir, "RefStarCat.dat")));
 		
 		out.write("# This is the reference star catalogue for use by the Asteria software. It is derived from\n");
-		out.write("# the Tycho-2 catalogue (Hog+ 2000) by selecting stars with both BT and VT magnitudes and\n");
-		out.write("# applying a faint VT magnitude limit of "+magLimit+". The columns are as follows:\n");
-		out.write("# (1) Right ascension at epoch J2000, ICRS, (the RAmdeg field from Tycho-2) [deg]\n");
-		out.write("# (2) Declination at epoch J2000, ICRS, (the DEmdeg field from Tycho-2) [deg]\n");
-		out.write("# (3) VT apparent magnitude [mag]\n");
+		out.write("# the Yale Bright Star Catalogue. The columns are as follows:\n");
+		out.write("# (1) Right ascension at epoch 2000.0, equinox J2000 [deg]\n");
+		out.write("# (2) Declination at epoch 2000.0, equinox J2000 [deg]\n");
+		out.write("# (3) Apparent visual magnitude (V band) [mag]\n");
 		List<double[]> coords = new LinkedList<>();
-		for(Tycho2Star tyc2Star : selectedTycho2Stars) {
-			out.write(String.format("%.8f\t%.8f\t%.3f\n", tyc2Star.RAmdeg, tyc2Star.DEmdeg, tyc2Star.VTmag));
-			coords.add(new double[]{Math.toRadians(tyc2Star.RAmdeg), Math.toRadians(tyc2Star.DEmdeg)});
+		for(YaleBscStar yaleBrightStar : selectedTycho2Stars) {
+			
+			double ra = AstrometryUtils.hmsToRadians(yaleBrightStar.RAh2000, yaleBrightStar.RAm2000, yaleBrightStar.RAs2000);
+			int sign = yaleBrightStar.DE_2000.equals("-") ? -1 : 1;
+			double dec = AstrometryUtils.dmsToRadians(sign, yaleBrightStar.DEd2000, yaleBrightStar.DEm2000, yaleBrightStar.DEs2000);
+			
+			double v = yaleBrightStar.Vmag;
+			
+			out.write(String.format("%.8f\t%.8f\t%.3f\n", Math.toDegrees(ra), Math.toDegrees(dec), v));
+			coords.add(new double[]{ra, dec});
 		}
 		out.close();
 		

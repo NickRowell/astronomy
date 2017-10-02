@@ -7,8 +7,8 @@ import java.util.Map.Entry;
 import infra.io.Gnuplot;
 import infra.os.OSChecker;
 import numeric.functions.Linear;
-import spectroscopy.utils.PicklesUtils;
-import spectroscopy.utils.PicklesUtils.PicklesMetadata;
+import spectroscopy.util.PicklesUtils;
+import spectroscopy.util.PicklesUtils.PicklesMetadata;
 
 /**
  * Application to plot the stellar spectra contained in the Pickles library.

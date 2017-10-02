@@ -5,9 +5,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import utils.MagnitudeUtils;
 import kinematics.SampleTangentialVelocityDistribution;
 import kinematics.TangentialVelocityDistribution;
+import photometry.util.PhotometryUtils;
 import Jama.Matrix;
 import constants.Galactic;
 import density.DensityProfile;
@@ -34,8 +34,8 @@ public class SampleVtanDistributionSingleLOS
 		double M = 12;				  // Absolute magnitude (used to restrict distance range)
 		
 		// Distance limits [parsecs].
-		double d_min = MagnitudeUtils.getDistance(m_min, M);
-		double d_max = MagnitudeUtils.getDistance(m_max, M);
+		double d_min = PhotometryUtils.getDistance(m_min, M);
+		double d_max = PhotometryUtils.getDistance(m_max, M);
 		
 		System.out.println("d_min/d_max = "+d_min+"/"+d_max);
 		

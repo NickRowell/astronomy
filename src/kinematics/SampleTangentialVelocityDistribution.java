@@ -5,8 +5,8 @@ import java.io.IOException;
 
 import density.DensityProfile;
 import numeric.functions.Linear;
-import utils.AstrometryUtils;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 
 public class SampleTangentialVelocityDistribution
 {

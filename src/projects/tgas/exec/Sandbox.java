@@ -1,9 +1,9 @@
 package projects.tgas.exec;
 
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 import constants.Units;
-import utils.AstrometryUtils;
 
 /**
  * Sandbox for the TGAS package.

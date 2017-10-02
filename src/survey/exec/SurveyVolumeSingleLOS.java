@@ -8,12 +8,12 @@ import java.io.IOException;
 import kinematics.TangentialVelocityDistribution;
 import numeric.functions.Linear;
 import survey.SurveyVolume;
-import utils.AstrometryUtils;
 import constants.Galactic;
 import density.DensityProfile;
 import density.ExponentialDisk;
 import density.Uniform;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 
 public class SurveyVolumeSingleLOS
 {

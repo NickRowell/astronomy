@@ -27,14 +27,15 @@ public class ModelWdlfUtil {
 	 */
 	public static ModelWDLF getLF(boolean starsPerMag, RangeMap<Star> stars) {
 		
-        // Count number of non-zero density bins
-        int n=0;
-        for(int bin=0; bin<stars.size(); bin++) {
-            if(!stars.get(bin).isEmpty()) {
-                n++;
-            }
-        }
-        
+		// XXX: I updated this to return a WDLF with the same number of magnitude bins as
+		// the input RangeMap; previously empty bins were skipped but this was affecting
+		// efforts to fit model WDLFs to observations. In reality if there are no simulated
+		// WDs in a bin then the density is zero and the uncertainty is very large. (Although
+		// formally we could place an upper limit on the density consistent with observing no
+		// stars).
+		
+		int n = stars.size();
+		
         double[] centres    = new double[n];
         double[] widths     = new double[n];        
         double[] lf         = new double[n];
@@ -44,34 +45,34 @@ public class ModelWdlfUtil {
         double[] age        = new double[n];
         double[] age_STD    = new double[n];       
         
-        // Index of next element in density/error arrays
-        int index=0;
-        
         // Loop over all magnitude bins
-        for(int bin=0; bin<stars.size(); bin++)
-        {
+        for(int bin=0; bin<stars.size(); bin++) {
+        	
+        	centres[bin] = stars.getRange(bin).mid();
+	        widths[bin] = stars.getRange(bin).width();
+	        
             if(stars.get(bin).isEmpty()) {
-            	// No simulated WDs
-                continue;
+            	// No simulated WDs. Density is zero and uncertainty is very large
+            	lf[bin] = 0.0;
+	            lf_STD[bin] = 1e9;
+	            mass[bin] = 0.0;
+	            mass_STD[bin] = 0.0;
+	            age[bin] = 0.0;
+	            age_STD[bin] = 0.0;
             }
-            
-            Range range = stars.getRange(bin);
-            
-            double[] lf_bin = getNumberDensity(stars, bin, starsPerMag);
-            double[] mass_bin = getMeanWdMass(stars, bin);
-            double[] age_bin = getMeanAge(stars, bin);
-
-            centres[index] = range.mid();
-            widths[index] = range.width();
-            
-            lf[index] = lf_bin[0];
-            lf_STD[index] = lf_bin[1];
-            mass[index] = mass_bin[0];
-            mass_STD[index] = mass_bin[1];
-            age[index] = age_bin[0];
-            age_STD[index] = age_bin[1];
-
-            index++;
+            else {
+	            
+	            double[] lf_bin = getNumberDensity(stars, bin, starsPerMag);
+	            double[] mass_bin = getMeanWdMass(stars, bin);
+	            double[] age_bin = getMeanAge(stars, bin);
+	
+	            lf[bin] = lf_bin[0];
+	            lf_STD[bin] = lf_bin[1];
+	            mass[bin] = mass_bin[0];
+	            mass_STD[bin] = mass_bin[1];
+	            age[bin] = age_bin[0];
+	            age_STD[bin] = age_bin[1];
+            }
         }
         
         return new ModelWDLF(centres, widths, lf, lf_STD, mass, mass_STD, age, age_STD);

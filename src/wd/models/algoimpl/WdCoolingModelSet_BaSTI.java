@@ -15,8 +15,8 @@ import java.util.logging.Level;
 
 import numeric.functions.MonotonicLinear;
 import photometry.Filter;
+import photometry.util.PhotometryUtils;
 import util.ParseUtil;
-import utils.MagnitudeUtils;
 import wd.models.algo.WdCoolingModelGrid;
 import wd.models.algo.WdCoolingModelSet;
 import wd.models.infra.WdAtmosphereType;
@@ -115,7 +115,7 @@ public class WdCoolingModelSet_BaSTI extends WdCoolingModelSet {
 		        	coolingTimeArray[p] = Math.pow(10, data[timeCol][p]);
 		        	magnitudeArray[p] = data[bandCol][p];
 		        	if(filter==Filter.M_BOL) {
-		        		magnitudeArray[p] = MagnitudeUtils.logLL0toMbol(data[bandCol][p]);
+		        		magnitudeArray[p] = PhotometryUtils.logLL0toMbol(data[bandCol][p]);
 		        	}
 		        }
 		        mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));

@@ -1,7 +1,7 @@
 package astrometry.test;
 
+import astrometry.util.AstrometryUtils;
 import constants.Units;
-import utils.AstrometryUtils;
 
 /**
  * Class tests the conversion of coordinates between Equatorial and Galactic frames.

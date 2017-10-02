@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 import constants.Units;
 import infra.io.Gnuplot;
@@ -14,10 +15,9 @@ import infra.os.OSChecker;
 import numeric.data.Range;
 import numeric.data.RangeMap;
 import numeric.functions.Linear;
+import photometry.util.PhotometryUtils;
 import projects.tgas.dm.TgasApassStar;
 import projects.tgas.util.TgasUtils;
-import utils.AstrometryUtils;
-import utils.MagnitudeUtils;
 
 /**
  * This class performs an analysis of the kinematics of Solar Neighbourhood stars using the TGAS data.
@@ -50,6 +50,11 @@ public class SeniorHonoursProject2017 {
 	 * Threshold on the fractional parallax error
 	 */
 	static double f_max = 5;
+	
+	/**
+	 * Threshold on the astrometric excess noise.
+	 */
+	static double excess_noise_max = 1.0;
 	
 	/**
 	 * Threshold on the B-V colour error
@@ -134,8 +139,41 @@ public class SeniorHonoursProject2017 {
 		// Plot the mean velocity as a function of velocity dispersion
 		plotVelocityVsS2(colourPartitionedStars.getRanges(), meanVelocities, velocityDisp);
 		
+		// Plot the astrometric excess noise as a function of B-V colour
+		plotExcessNoise(colourPartitionedStars);
 		
+	}
+	
+	/**
+	 * Plots the astrometric excess noise as a function of B-V colour for selected stars.
+	 * 
+	 * @param colourPartitionedStars
+	 * 	A {@link RangeMap} containing the selected stars partitioned by colour.
+	 */
+	private static void plotExcessNoise(RangeMap<TgasApassStarWithVelocity> colourPartitionedStars) {
 		
+		StringBuilder script = new StringBuilder();
+		script.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
+		script.append("set xrange [*:*]").append(OSChecker.newline);
+		script.append("set yrange [*:*]").append(OSChecker.newline);
+		script.append("set key top left").append(OSChecker.newline);
+		script.append("set xtics out").append(OSChecker.newline);
+		script.append("set ytics out").append(OSChecker.newline);
+		script.append("set xlabel 'B - V'").append(OSChecker.newline);
+		script.append("set ylabel 'Excess Noise'").append(OSChecker.newline);
+		script.append("plot '-' u 1:2 w p pt 5 ps 0.5 notitle").append(OSChecker.newline);
+		
+		for(int bin=0; bin<colourPartitionedStars.size(); bin++) {
+			for(TgasApassStarWithVelocity star : colourPartitionedStars.get(bin)) {
+				double bv = star.b_mag - star.v_mag;
+				script.append(bv + " " + star.astrometric_excess_noise).append(OSChecker.newline);
+			}
+		}
+		try {
+			Gnuplot.displayImage(Gnuplot.executeScript(script.toString()));
+		} catch (IOException e) {
+			System.out.println("Problem plotting excess noise");
+		}
 	}
 	
 	/**
@@ -163,7 +201,7 @@ public class SeniorHonoursProject2017 {
 			script.append("set ytics out").append(OSChecker.newline);
 			script.append("set xlabel 'S^{2}'").append(OSChecker.newline);
 			script.append("set ylabel '"+labels[comp]+" [km s^{-1}]'").append(OSChecker.newline);
-			script.append("plot '-' u 1:(-$2) w p pt 5 ps 0.5 notitle").append(OSChecker.newline);
+			script.append("plot '-' u 1:(-$2) w lp pt 5 ps 0.5 notitle").append(OSChecker.newline);
 			
 			for(int i=0; i<colours.length; i++) {
 				script.append(velocityDisp[i] + " " + meanVelocities[i].get(comp, 0)).append(OSChecker.newline);
@@ -196,10 +234,10 @@ public class SeniorHonoursProject2017 {
 		script.append("set ytics out").append(OSChecker.newline);
 		script.append("set xlabel 'B-V'").append(OSChecker.newline);
 		script.append("set ylabel 'km s^{-1}'").append(OSChecker.newline);
-		script.append("plot '-' u 1:(-$2) w p pt 5 ps 0.5 title 'U',");
-		script.append("     '-' u 1:(-$2) w p pt 5 ps 0.5 title 'V',");
-		script.append("     '-' u 1:(-$2) w p pt 5 ps 0.5 title 'W',");
-		script.append("     '-' u 1:2 w p pt 5 ps 0.5 title 'S'").append(OSChecker.newline);
+		script.append("plot '-' u 1:(-$2) w lp pt 5 ps 0.5 title 'U',");
+		script.append("     '-' u 1:(-$2) w lp pt 5 ps 0.5 title 'V',");
+		script.append("     '-' u 1:(-$2) w lp pt 5 ps 0.5 title 'W',");
+		script.append("     '-' u 1:2 w lp pt 5 ps 0.5 title 'S'").append(OSChecker.newline);
 		
 		for(int i=0; i<colours.length; i++) {
 			script.append(colours[i].mid() + " " + meanVelocities[i].get(0, 0)).append(OSChecker.newline);
@@ -253,14 +291,21 @@ public class SeniorHonoursProject2017 {
 			// APASS B-V colour error
 			double bvErr = Math.sqrt(star.e_b_mag * star.e_b_mag + star.e_v_mag * star.e_v_mag);
 			
-			// Data quality thresholds: selection on parallax and colour error
-			// TODO: selection on astrometric excess noise?
-			if(star.parallax/star.parallax_error < f_max || bvErr > cerr_max) {
+			// Data quality thresholds: selection on parallax, colour error and excess noise
+			if(star.parallax/star.parallax_error < f_max) {
+				continue;
+			}
+			
+			if(bvErr > cerr_max) {
+				continue;
+			}
+			
+			if(star.astrometric_excess_noise > excess_noise_max) {
 				continue;
 			}
 			
 			// Absolute V magnitude
-			double vMag = MagnitudeUtils.getAbsoluteMagnitudeFromPi(star.parallax/1000.0, star.v_mag);
+			double vMag = PhotometryUtils.getAbsoluteMagnitudeFromPi(star.parallax/1000.0, star.v_mag);
 			
 			// Distance [parsec]
 			double d = 1000.0 / star.parallax;

@@ -56,12 +56,12 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import astrometry.DistanceFromParallax;
 import astrometry.DistanceFromParallax.METHOD;
+import photometry.util.PhotometryUtils;
 import projects.upc.dm.SsaCrossMatch;
 import projects.upc.dm.UpcStar;
 import projects.upc.util.UpcUtils;
 import projects.upc.util.XmUtil;
 import util.GuiUtil;
-import utils.MagnitudeUtils;
 
 /**
  * Presents a plot of the HR diagram of UPC stars.
@@ -294,7 +294,7 @@ public class HrDiagram extends JPanel {
 			double d = DistanceFromParallax.getDistance(p, sigma_p, method);
 			// Filter & convert to absolute magnitude
 			if(d>0 && !Double.isInfinite(d)) {
-				double B = MagnitudeUtils.getAbsoluteMagnitude(d, b);
+				double B = PhotometryUtils.getAbsoluteMagnitude(d, b);
 				series.add(b-r2, B);
 			}
 		}

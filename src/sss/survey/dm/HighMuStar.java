@@ -3,7 +3,7 @@ package sss.survey.dm;
 import java.io.*;
 import java.util.Scanner;
 
-import utils.AstrometryUtils;
+import astrometry.util.AstrometryUtils;
 
 /**
  * Implementation of {@link WhiteDwarf} specialized for the high proper motion sample.

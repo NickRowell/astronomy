@@ -17,18 +17,22 @@ import wd.wdlf.util.ModelWdlfUtil;
  * @version $Id$
  */
 public class MonteCarloWDLFSolver extends WDLFSolver {
+	
     // Used to add Gaussian error to bolometric magnitude
-    static Random error = new Random();
+    private static Random error = new Random();
     
-    /** Default constructor. */
-    public MonteCarloWDLFSolver() {}
+    /**
+     * Default constructor.
+     */
+    public MonteCarloWDLFSolver() {
+    	
+    }
     
     /**
      * Monte Carlo LF integration code.
      */
     @Override
-    public final ModelWDLF calculateWDLF(ModellingState modellingState)
-    {
+    public final ModelWDLF calculateWDLF(ModellingState modellingState) {
         
         // Get WhiteDwarfs object for accumulating simulated stars.
         RangeMap<Star> whiteDwarfs = new RangeMap<Star>(modellingState.wdlfBinCentres, modellingState.wdlfBinWidths);
@@ -79,10 +83,8 @@ public class MonteCarloWDLFSolver extends WDLFSolver {
                 
                 // Determine if WD models had to be extrapolated in order
                 // to get this bolometric magnitude.
-                star.setExtrap(wdCoolingModels.isExtrapolated(coolingTimeWD, 
-                                           star.getWhiteDwarfMass(),
-                                           star.getWhiteDwarfAtmph(),
-                                           filter));
+                star.setExtrap(wdCoolingModels.isExtrapolated(coolingTimeWD, star.getWhiteDwarfMass(),
+                                           star.getWhiteDwarfAtmph(), filter));
                 
                 // In volume limited survey, all stars are observed and each
                 // carries a weight of 1.

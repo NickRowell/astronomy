@@ -53,10 +53,10 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import astrometry.DistanceFromParallax;
 import astrometry.DistanceFromParallax.METHOD;
+import photometry.util.PhotometryUtils;
 import projects.tgas.dm.TgasStar;
 import projects.tgas.util.TgasUtils;
 import util.GuiUtil;
-import utils.MagnitudeUtils;
 
 /**
  * Presents a plot of the HR diagram of TGAS stars.
@@ -211,7 +211,7 @@ public class HrDiagram extends JPanel {
 				
 				n++;
 				
-				double G = MagnitudeUtils.getAbsoluteMagnitude(d, g);
+				double G = PhotometryUtils.getAbsoluteMagnitude(d, g);
 				series.add(bv, G);
 			}
 		}

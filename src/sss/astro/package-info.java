@@ -1,4 +1,4 @@
 /**
  * Classes associated with SSS astrometry.
  */
-package sss.astrometry;
+package sss.astro;

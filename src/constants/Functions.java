@@ -1,6 +1,6 @@
 package constants;
 
-import utils.SpectroscopicUtils;
+import spectroscopy.util.SpectroscopyUtils;
 
 /**
  * Class contains implementations of various common functions.
@@ -34,7 +34,7 @@ public class Functions {
 		double k = Physical.Kb;
 		
 		// Wavelength in metres
-		double Lm = L*SpectroscopicUtils.ANGSTROMS_TO_METRES;
+		double Lm = L*SpectroscopyUtils.ANGSTROMS_TO_METRES;
 	
 		return (2.0*h*c*c/Math.pow(Lm,5))/(Math.exp(h*c/(Lm*k*T)) - 1);
     }

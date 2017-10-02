@@ -9,9 +9,9 @@ import java.util.Map.Entry;
 
 import numeric.functions.Linear;
 import photometry.Filter;
-import photometry.FilterUtils;
-import spectroscopy.utils.PicklesUtils;
-import spectroscopy.utils.PicklesUtils.PicklesMetadata;
+import photometry.util.FilterUtils;
+import spectroscopy.util.PicklesUtils;
+import spectroscopy.util.PicklesUtils.PicklesMetadata;
 
 /**
  * This class provides an application to estimate the relation between two parameterisations

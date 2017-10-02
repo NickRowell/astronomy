@@ -1,4 +1,4 @@
-package utils;
+package photometry.util;
 
 import constants.Solar;
 
@@ -7,7 +7,7 @@ import constants.Solar;
  * @author nrowell
  *
  */
-public class MagnitudeUtils
+public class PhotometryUtils
 {
 	/**
 	 * Get distance from the apparent and absolute magnitudes.
@@ -44,7 +44,7 @@ public class MagnitudeUtils
 	
 	/**
 	 * Get absolute magnitude from the parallax and apparent magnitude.
-	 * Note the similarity to {@link MagnitudeUtils#getAbsoluteMagnitude(double, double)};
+	 * Note the similarity to {@link PhotometryUtils#getAbsoluteMagnitude(double, double)};
 	 * basically Math.log10(p) = -Math.log10(d) because d = 1/p.
 	 * 
 	 * @param p

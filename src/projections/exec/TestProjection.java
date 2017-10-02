@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import astrometry.util.AstrometryUtils;
 import projections.Aitoff;
 import projections.Projection;
 import projections.util.ProjectionUtil;
-import utils.AstrometryUtils;
 
 /**
  * Simple application to test the generation of sky projection plots using utilities in {@link ProjectionUtil}.

@@ -1,4 +1,4 @@
-package photometry;
+package photometry.util;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import constants.Functions;
 import numeric.functions.Linear;
 import numeric.integration.IntegrableFunction;
 import numeric.integration.IntegrationUtils;
+import photometry.Filter;
 
 /**
  * Utility methods for {@link Filter}s.

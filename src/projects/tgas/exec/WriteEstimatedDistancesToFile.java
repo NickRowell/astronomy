@@ -10,9 +10,9 @@ import java.util.logging.Logger;
 
 import astrometry.DistanceFromParallax;
 import astrometry.DistanceFromParallax.METHOD;
+import photometry.util.PhotometryUtils;
 import projects.tgas.dm.TgasStar;
 import projects.tgas.util.TgasUtils;
-import utils.MagnitudeUtils;
 
 /**
  * This class processes the TGAS preliminary data file and produces a file containing the distances and absolute
@@ -83,14 +83,14 @@ public class WriteEstimatedDistancesToFile {
 				
 				
 				// Absolute G magnitudes assuming different distance priors
-				double g_uniform = MagnitudeUtils.getAbsoluteMagnitude(d_uniform, g);
-				double g_cv = MagnitudeUtils.getAbsoluteMagnitude(d_cv, g);
-				double g_expdecay = MagnitudeUtils.getAbsoluteMagnitude(d_expdecay, g);
+				double g_uniform = PhotometryUtils.getAbsoluteMagnitude(d_uniform, g);
+				double g_cv = PhotometryUtils.getAbsoluteMagnitude(d_cv, g);
+				double g_expdecay = PhotometryUtils.getAbsoluteMagnitude(d_expdecay, g);
 				double g_simple = g + 5.0 * Math.log10(pi) + 5;
 				
-				double b_uniform = MagnitudeUtils.getAbsoluteMagnitude(d_uniform, b);
-				double b_cv = MagnitudeUtils.getAbsoluteMagnitude(d_cv, b);
-				double b_expdecay = MagnitudeUtils.getAbsoluteMagnitude(d_expdecay, b);
+				double b_uniform = PhotometryUtils.getAbsoluteMagnitude(d_uniform, b);
+				double b_cv = PhotometryUtils.getAbsoluteMagnitude(d_cv, b);
+				double b_expdecay = PhotometryUtils.getAbsoluteMagnitude(d_expdecay, b);
 				
 				
 				out.write(String.format("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%d\n", bv, e_bv, g_f_err, f, d_uniform, d_cv, d_expdecay, g_uniform, g_cv, g_expdecay, b_uniform, b_cv, b_expdecay, g_simple, tgasStar.tycho2_id));

@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import astrometry.util.AstrometryUtils;
 import projections.Aitoff;
 import projections.util.ProjectionUtil;
 import sdss.footprint.SdssFootprintUtils;
 import sdss.footprint.Stripe;
-import utils.AstrometryUtils;
 
 /**
  * Test the SDSS footprint area code.

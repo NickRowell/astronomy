@@ -61,7 +61,7 @@ public class ModellingState extends State {
     /**
      * Synthetic WDLF object.
      */
-    public ModelWDLF syntheticWDLF;     
+    public ModelWDLF syntheticWDLF;
     
     /**
      * Input star formation rate function.

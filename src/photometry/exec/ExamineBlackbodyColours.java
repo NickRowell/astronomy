@@ -1,7 +1,7 @@
 package photometry.exec;
 
 import photometry.Filter;
-import photometry.FilterUtils;
+import photometry.util.FilterUtils;
 
 /**
  * Class examines the colours of blackbody sources of different temperatures in various bands.

@@ -18,8 +18,8 @@ import ms.lifetime.algo.PreWdLifetime;
 import ms.lifetime.algoimpl.PreWdLifetime_LPCODE;
 import numeric.functions.MonotonicLinear;
 import photometry.Filter;
+import photometry.util.PhotometryUtils;
 import util.ParseUtil;
-import utils.MagnitudeUtils;
 import wd.models.algo.WdCoolingModelGrid;
 import wd.models.algo.WdCoolingModelSet;
 import wd.models.infra.WdAtmosphereType;
@@ -68,6 +68,9 @@ import wd.models.infra.WdAtmosphereType;
  *    off the pre-WD lifetime for these models.
  * 
  * TODO: implement other filters in the Filter enum.
+ * 
+ * NOTE that the models have been augmented with Gaia G band magnitudes using the application at
+ * {@link projects.gaiawd.exec.AddGaiaGBandToWdModels}.
  *
  * @author nrowell
  * @version $Id$
@@ -77,12 +80,12 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	/**
 	 * Path to the DA models.
 	 */
-	private static final String daPath = "resources/wd/cooling/LPCODE/da/z0p01/colours/";
+	private static final String daPath = "resources/wd/cooling/LPCODE/da/z0p01/colours_plus_G/";
 	
 	/**
 	 * Path to the DB models.
 	 */
-	private static final String dbPath = "resources/wd/cooling/LPCODE/db/z_solar/colours/";
+	private static final String dbPath = "resources/wd/cooling/LPCODE/db/z_solar/colours_plus_G/";
 	
 	/**
 	 * Masses of the DA models.
@@ -112,7 +115,8 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 				Filter.F814W_ACS,
 //				Filter.F850LP, Filter.F892N,
 				Filter.U, Filter.B, Filter.V, Filter.R,
-				Filter.I, Filter.J, Filter.H, Filter.K
+				Filter.I, Filter.J, Filter.H, Filter.K,
+				Filter.G
 				//, Filter.L
 				);
 		Set<Filter> filtersH = new HashSet<>(filtersArrH);
@@ -124,7 +128,8 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 //				Filter.F625W, Filter.F658N, Filter.F660N, Filter.F775W,
 				Filter.F814W_ACS,
 //				Filter.F850LP, Filter.F892N,
-				Filter.U, Filter.B, Filter.V, Filter.R,	Filter.I);
+				Filter.U, Filter.B, Filter.V, Filter.R,	Filter.I,
+				Filter.G);
 		Set<Filter> filtersHe = new HashSet<>(filtersArrHe);
 		
 		filtersByAtm.put(WdAtmosphereType.H, filtersH);
@@ -225,7 +230,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	        	magnitudeArray[p] = colourData[bandCol][p];
 	        	if(filter==Filter.M_BOL) {
 	        		// We have Log(L/Lo) rather than magnitude
-	        		magnitudeArray[p] = MagnitudeUtils.logLL0toMbol(magnitudeArray[p]);
+	        		magnitudeArray[p] = PhotometryUtils.logLL0toMbol(magnitudeArray[p]);
 	        	}
 	        }
 	        
@@ -293,6 +298,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	    	case H:		return 29;
 	    	case K:		return 30;
 //	    	case L:		return 31;
+	    	case G:		return 32;
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
 						" don't support filter "+band+" for atmosphere type "+WdAtmosphereType.H);
@@ -333,6 +339,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	    	case V:		return 25;
 	    	case R:		return 26;
 	    	case I:		return 27;
+	    	case G:		return 28;
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
 						" don't support filter "+band+" for atmosphere type "+WdAtmosphereType.He);

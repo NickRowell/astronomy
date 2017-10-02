@@ -1,4 +1,4 @@
-package utils;
+package astrometry.util;
 
 import java.util.Random;
 
@@ -688,6 +688,30 @@ public class AstrometryUtils
 			// Angle is in the desired range
 			return angle;
 		}
+	}
+	
+	/**
+	 * Computes the stellar parallax for stars at a distance d. Note that the inverse problem,
+	 * distance from parallax, is tricky and utilities are available at {@link astrometry.DistanceFromParallax}.
+	 * 
+	 * @param d
+	 * 	The distance to the star along the line of sight [parsecs]
+	 * @return
+	 * 	The annual parallax [arcseconds]
+	 */
+	public static double getParallaxFromDistance(double d) {
+		return 1.0 / d;
+	}
+	
+	/**
+	 * Takes the appropriate action if a user tries to naively invert the parallax to get the distance.
+	 * @param pi
+	 * 	The stellar parallax [arcseconds]
+	 * @return
+	 * 	The stellar distance [parsecs]
+	 */
+	public static double getDistanceFromParallax(double pi) {
+		throw new RuntimeException("Oh no you don't - see astrometry.DistanceFromParallax for this");
 	}
 	
 }

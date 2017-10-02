@@ -3,8 +3,8 @@ package survey;
 import kinematics.TangentialVelocityDistribution;
 import numeric.functions.Linear;
 import numeric.functions.MonotonicLinear;
-import utils.AstrometryUtils;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import density.DensityProfile;
 
 /**

@@ -5,10 +5,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import utils.AstrometryUtils;
 import kinematics.TangentialVelocityDistribution;
 import constants.Galactic;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 
 public class TestDiscoveryFraction
 {

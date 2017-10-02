@@ -1,12 +1,11 @@
-package utils.test;
-
-import utils.AstrometryUtils;
+package astrometry.test;
 
 import java.util.Arrays;
 
 import Jama.Matrix;
 import astrometry.DistanceFromParallax;
 import astrometry.DistanceFromParallax.METHOD;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 import constants.Units;
 

@@ -49,7 +49,7 @@ public abstract class WdCoolingModelSet {
     protected final Map<Filter, Map<WdAtmosphereType, WdCoolingModelGrid>> coolingModelsByFilter = new HashMap<>();
 	
 	/**
-	 * {@link Set} of all {@link WdAtmosphereType}s provided by the Montreal group models.
+	 * {@link Set} of all {@link WdAtmosphereType}s provided by the models.
 	 * NOTE: contructors in implementing classes must populate this set.
 	 */
 	protected final Set<WdAtmosphereType> wdAtmosphereTypes = new HashSet<WdAtmosphereType>();

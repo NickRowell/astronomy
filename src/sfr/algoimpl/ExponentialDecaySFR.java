@@ -115,6 +115,32 @@ public class ExponentialDecaySFR extends BaseSfr {
      * {@inheritDoc}
      */
 	@Override
+	public double getMaxRate() {
+		return r0;
+	}
+	
+	/**
+     * {@inheritDoc}
+     */
+	@Override
+	public double[] getParams() {
+		return new double[]{r0, lambda, t_max};
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setParams(double[] params) {
+		r0 = params[0];
+		lambda = params[1];
+		t_max = params[2];
+	}
+	
+    /**
+     * {@inheritDoc}
+     */
+	@Override
 	public String toString() {
 		
 		// Number of evenly-distributed samples to plot
@@ -141,12 +167,5 @@ public class ExponentialDecaySFR extends BaseSfr {
 		return output.toString();
 	}
 
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public double getMaxRate() {
-		return r0;
-	}
     
 }

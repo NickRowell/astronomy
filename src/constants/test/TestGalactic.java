@@ -1,8 +1,8 @@
 package constants.test;
 
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
-import utils.AstrometryUtils;
 
 public class TestGalactic
 {

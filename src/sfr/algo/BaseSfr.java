@@ -58,42 +58,6 @@ public abstract class BaseSfr {
     }
 
     /**
-     * Get {@link BaseSfr#t_min}, the minimum lookback time.
-     * @return
-     *  {@link BaseSfr#t_min}, the minimum lookback time.
-     */
-//    public double getTmin() {
-//    	return t_min;
-//    }
-//
-//    /**
-//     * Set {@link BaseSfr#t_min}, the minimum lookback time.
-//     * @param t_min
-//     *  The minimum lookback time to set.
-//     */
-//    public void setTmin(double t_min) {
-//    	this.t_min = t_min;
-//    }
-//    
-//    /**
-//     * Get {@link BaseSfr#t_max}, the maximum lookback time.
-//     * @return
-//     *  {@link BaseSfr#t_max}, the maximum lookback time.
-//     */
-//    public double getTmax() {
-//    	return t_max;
-//    }
-//    
-//    /**
-//     * Set {@link BaseSfr#t_max}, the maximum lookback time.
-//     * @param t_max
-//     *  The maximum lookback time to set.
-//     */
-//    public void setTmax(double t_max) {
-//    	this.t_max = t_max;
-//    }
-
-    /**
      * Create and return a deep copy of the {@link BaseSfr}.
      * @return
      * 	A new instance of the {@link BaseSfr} implementing class.
@@ -143,13 +107,28 @@ public abstract class BaseSfr {
      */
     public abstract String toString();
     
-    
     /**
      * Get the maximum star formation rate.
      * @return
      * 	The maximum star formation rate [stars/yr]
      */
     public abstract double getMaxRate();
+    
+    /**
+     * Gets the parameters of the star formation rate model, so that the model can be tuned using
+     * an iterative solver.
+     * @return
+     * 	The configurable parameters of the {@link BaseSfr} implementation.
+     */
+    public abstract double[] getParams();
+    
+    /**
+     * Sets the parameters of the star formation rate model, so that the model can be tuned using
+     * an iterative solver.
+     * @param params
+     * 	The configurable parameters of the {@link BaseSfr} implementation.
+     */
+    public abstract void setParams(double[] params);
     
     /**
      * Get a Gnuplot script that can be used to make a plot of the SFR model. The data is appended to the script

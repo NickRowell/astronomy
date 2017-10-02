@@ -29,11 +29,8 @@ public class ModelWDLF extends BaseWdlf {
     /** 
      * Constructor used by synthetic WDLF generator. 
      */
-    public ModelWDLF(double[] binCentres, double[] binWidths,
-                     double[] lf, double[] lf_STD,
-                     double[] mass, double[] mass_STD,
-                     double[] age, double[] age_STD)
-    {
+    public ModelWDLF(double[] binCentres, double[] binWidths, double[] lf, double[] lf_STD,
+                     double[] mass, double[] mass_STD, double[] age, double[] age_STD) {
         
         // Call constructor of parent class to perform checks on magnitude bins
         // and set up the luminosity function
@@ -47,8 +44,7 @@ public class ModelWDLF extends BaseWdlf {
      * Get string representation of WDLF. 
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
          
         StringBuilder out = new StringBuilder();
         
@@ -70,8 +66,7 @@ public class ModelWDLF extends BaseWdlf {
      * Gnuplot script that plots average age-luminosity relation.
      * Script contains both plotting commands and data. 
      */
-    public String getAgeLuminosityRelationGnuplotScript()
-    {
+    public String getAgeLuminosityRelationGnuplotScript() {
         
         double[] xrange = getXRange();
         // Sensible range on time axis
@@ -120,8 +115,7 @@ public class ModelWDLF extends BaseWdlf {
      * Gnuplot script that plots average mass-luminosity relation.
      * Script contains both plotting commands and data. 
      */
-    public String getMassLuminosityRelationGnuplotScript()
-    {
+    public String getMassLuminosityRelationGnuplotScript() {
         
         double[] xrange = getXRange();
         double[] yrange = {0,1.3};

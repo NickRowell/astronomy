@@ -1,7 +1,7 @@
 package photometry.exec;
 
 import photometry.Filter;
-import photometry.FilterUtils;
+import photometry.util.FilterUtils;
 
 /**
  * Prints out Vega magnitude zeropoints for a selection of filters in order to test the code.

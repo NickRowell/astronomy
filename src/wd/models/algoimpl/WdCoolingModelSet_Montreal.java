@@ -38,6 +38,9 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 		filters.add(Filter.I);
 		filters.add(Filter.F606W_ACS);
 		filters.add(Filter.F814W_ACS);
+		// Added by postprocessing models to compute G using colour transformations
+		// using {@link projects.gaiawd.exec.AddGaiaGBandToWdModels}
+		filters.add(Filter.G);
 		// Montreal models provide the same filters for each atmosphere type
 		filtersByAtm.put(WdAtmosphereType.H, filters);
 		filtersByAtm.put(WdAtmosphereType.He, filters);
@@ -163,6 +166,12 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 			bandCol = 11;
 			directory = "hst";
 			break;
+    	case G:
+    		timeCol = 26;
+			bandCol = 27;
+			directory = "standard_plus_G";
+			break;
+			
 		default:
 			throw new IllegalArgumentException(WdCoolingModelSet_Montreal.class.getName()+" don't support filter "+band);
     	}

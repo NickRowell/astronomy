@@ -8,12 +8,12 @@ package density;
  * @author nrowell
  *
  */
-public abstract class DensityProfile
-{
+public abstract class DensityProfile {
 	
 	/**
-	 * Returns the stellar density at the given distance along the
-	 * LOS, relative to that at the Sun.
+	 * Returns the stellar density at the given distance along the LOS,
+	 * relative to that at the Sun [pc^{-3}].
+	 * 
 	 * @param ra	Right ascension towards line of sight [radians]
 	 * @param dec	Declination towards line of sight [radians]
 	 * @param r		Range along line of sight [parsecs]
@@ -26,6 +26,4 @@ public abstract class DensityProfile
 	 * meaningful description of themselves.
 	 */
 	public abstract String toString();
-	
-	
 }

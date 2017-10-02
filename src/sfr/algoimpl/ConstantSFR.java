@@ -87,6 +87,31 @@ public class ConstantSFR extends BaseSfr {
      * {@inheritDoc}
      */
 	@Override
+	public double getMaxRate() {
+		return rate;
+	}
+	
+	/**
+     * {@inheritDoc}
+     */
+	@Override
+	public double[] getParams() {
+		return new double[]{rate, t_max};
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setParams(double[] params) {
+		rate = params[0];
+		t_max = params[1];
+	}
+	
+    /**
+     * {@inheritDoc}
+     */
+	@Override
 	public String toString() {
 		
 		StringBuilder output = new StringBuilder();
@@ -106,11 +131,4 @@ public class ConstantSFR extends BaseSfr {
 		return output.toString();
 	}
 
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public double getMaxRate() {
-		return rate;
-	}
 }

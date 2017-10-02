@@ -1,7 +1,7 @@
 package kinematics;
 
-import utils.AstrometryUtils;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 
 /**

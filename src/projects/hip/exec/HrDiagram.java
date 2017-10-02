@@ -53,10 +53,10 @@ import org.jfree.data.xy.XYSeriesCollection;
 
 import astrometry.DistanceFromParallax;
 import astrometry.DistanceFromParallax.METHOD;
+import photometry.util.PhotometryUtils;
 import projects.hip.dm.HipStar;
 import projects.hip.util.HipUtils;
 import util.GuiUtil;
-import utils.MagnitudeUtils;
 
 /**
  * Presents a plot of the HR diagram of Hipparcos stars, and distance distribution.
@@ -242,7 +242,7 @@ public class HrDiagram extends JPanel {
 				
 				n++;
 				
-				double H = MagnitudeUtils.getAbsoluteMagnitude(d, h);
+				double H = PhotometryUtils.getAbsoluteMagnitude(d, h);
 				series.add(bv, H);
 				
 				// Add to distance histogram

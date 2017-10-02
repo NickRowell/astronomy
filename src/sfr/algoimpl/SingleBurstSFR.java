@@ -34,6 +34,24 @@ public class SingleBurstSFR extends ConstantSFR {
     	this.rate = rate;
     }
 
+	/**
+     * {@inheritDoc}
+     */
+	@Override
+	public double[] getParams() {
+		return new double[]{rate, t_min, t_max};
+	}
+	
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void setParams(double[] params) {
+		rate = params[0];
+		t_min = params[1];
+		t_max = params[2];
+	}
+	
     /**
      * {@inheritDoc}}
      */

@@ -69,7 +69,7 @@ public class StackVideos {
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		// Directory containing the video folders
-		File videoDir = new File("/home/nrowell/Temp/videos");
+		File videoDir = new File("/home/nrowell/Temp/tmp");
 		
 		
 		// Get all subdirectories (M20160812_225434_Gargunnock etc)
@@ -93,7 +93,7 @@ public class StackVideos {
 			
 	        String[] command = new String[]{"avconv", "-i", avi.getAbsolutePath(), "-f",  "image2",  videoSubDir.getAbsolutePath()+"/frame%03d.png"};
 	        
-	        logger.info(String.format("Command: %s %s %s %s %s %s ", command));
+	        logger.info(String.format("Command: %s %s %s %s %s %s ", (Object[])command));
 	        
             final Process proc = Runtime.getRuntime().exec(command);
             StreamGobbler errorGobbler = new StreamGobbler(proc.getErrorStream(), "AVCONV");

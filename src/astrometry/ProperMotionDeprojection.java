@@ -5,12 +5,14 @@ import java.util.List;
 
 import constants.Galactic;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
 
 /**
  * Implements the proper motion deprojection from 
  * 
  * Dehnen & Binney (1998) "Local stellar kinematics from Hipparcos data", MNRAS 298:2 387-394
- *
+ * 
+ * See also projects.tgas.exec.SeniorHonoursProject2017
  *
  * @author nrowell
  * @version $Id$
@@ -89,8 +91,7 @@ public class ProperMotionDeprojection {
 	 * TODO: implement weighted calculation.
 	 * 
 	 */
-	private void deprojectProperMotions()
-	{
+	private void deprojectProperMotions() {
 		
 		Matrix I = Matrix.identity(3,3);
 	
@@ -107,7 +108,7 @@ public class ProperMotionDeprojection {
         // Total weight of all stars added to 
         double n=0;
 
-        for(double[] object : inputs){
+        for(double[] object : inputs) {
 
         	double ra      = object[0];
         	double dec     = object[1];
@@ -117,47 +118,43 @@ public class ProperMotionDeprojection {
         	double sig_d   = object[5];
         	double weight  = object[6];
         	
-            //+++ get unit position vector +++//
-        	// TODO: is there an astro utils method for this?
-            Matrix r = new Matrix(new double[][]{{Math.cos(ra) * Math.cos(dec)},
-                                                 {Math.sin(ra) * Math.cos(dec)},
-                                                 {Math.sin(dec)}});
-
-            //+++ Calculate components of projection matrix relative to Equatorial triad +++//
+            // Get unit position vector
+            Matrix r = AstrometryUtils.sphericalPolarToCartesian(1.0, ra, dec);
+            
+            // Calculate components of projection matrix relative to Equatorial triad
             A = I.minus(r.times(r.transpose()));
 
-            //+++ Transform A to Galactic coordinate frame +++//
+            // Transform A to Galactic coordinate frame
             A = Galactic.r_G_E.times(A.times(Galactic.r_E_G));
 
-            //+++ Calculate proper motion vector components relative to Equatorial triad +++//
+            // Calculate proper motion vector components relative to Equatorial triad
             p.set(0, 0, 4.74 * d * (-Math.sin(ra) * Math.cos(dec) * ra_dot - Math.cos(ra) * Math.sin(dec) * dec_dot));
             p.set(1, 0, 4.74 * d * (Math.cos(ra) * Math.cos(dec) * ra_dot - Math.sin(ra) * Math.sin(dec) * dec_dot));
             p.set(2, 0, 4.74 * d * (Math.cos(dec) * dec_dot));
 
-            //+++ Transform proper motion vector to Galactic frame +++//
+            // Transform proper motion vector to Galactic frame
             p = Galactic.r_G_E.times(p);
 
-            //+++ Get proper motion velocity error in Galactic frame +++//
+            // Get proper motion velocity error in Galactic frame
             ep2.set(0, 0, Math.pow(p.get(0, 0) * sig_d / d, 2.0));
             ep2.set(1, 0, Math.pow(p.get(1, 0) * sig_d / d, 2.0));
             ep2.set(2, 0, Math.pow(p.get(2, 0) * sig_d / d, 2.0));
 
-            //+++ Weight components and add to sum total for ensemble +++//
-            // FIXME: add weighting here
+            // Weight components and add to sum total for ensemble
             meanP = meanP.plus(p.times(weight));
             meanA = meanA.plus(A.times(weight));
             meanEP2 = meanEP2.plus(ep2.times(weight*weight));
             n+=weight;
         }
 
-        //+++ Divide A, p & ep2 component-wise by number of stars to get mean +++//
+        // Divide A, p & ep2 component-wise by number of stars to get mean
         meanP   = meanP.times(1.0 / n);
         meanEP2 = meanEP2.times(1.0 / (n*n));
         meanA   = meanA.times(1.0 / n);
 
-        //+++ Deprojection operation using mean values +++//
+        // Deprojection operation using mean values
 
-        //+++ Invert <A> +++//
+        // Invert <A>
         Matrix invA = meanA.inverse();
 
         //+++ Get errors on mean velocities from distance uncertainties alone +++//

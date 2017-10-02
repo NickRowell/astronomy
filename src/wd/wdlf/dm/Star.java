@@ -2,8 +2,8 @@ package wd.wdlf.dm;
 
 import java.util.Random;
 
+import photometry.util.PhotometryUtils;
 import sfr.algo.BaseSfr;
-import utils.MagnitudeUtils;
 import wd.models.infra.WdAtmosphereType;
 
 /**
@@ -391,7 +391,7 @@ public class Star {
      * 	The maximum survey distance for star of absolute magnitude M [pc].
      */
     public double getDmax(double m) {
-        return MagnitudeUtils.getDistance(m, getMag());
+        return PhotometryUtils.getDistance(m, getMag());
     }
     
     /**
@@ -404,7 +404,7 @@ public class Star {
      * 	The maximum survey distance for star of absolute magnitude M [pc].
      */
     public static double getDmax(double m, double M) {
-        return MagnitudeUtils.getDistance(m, M);
+        return PhotometryUtils.getDistance(m, M);
     }
     
 }
