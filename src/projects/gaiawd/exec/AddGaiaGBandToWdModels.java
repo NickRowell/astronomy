@@ -18,11 +18,14 @@ import photometry.util.ColourTransformations;
  * for existing sets of WD cooling models that don't contain the G band. This is done
  * using colour transformations applied to bands that are provided by the models.
  *
+ * NOTE: for the Montreal WD cooling models, we now have colours in the G, BP & RP bands computed
+ * by synthetic photometry by Pierre Bergeron, so this application is obsolete for the
+ * Montreal models.
+ *
  * @author nrowell
  * @version $Id$
  */
 public class AddGaiaGBandToWdModels {
-
 
 	/**
 	 * Main application entry point.
@@ -32,9 +35,9 @@ public class AddGaiaGBandToWdModels {
 	 */
 	public static void main(String[] args) throws IOException {
 		
-//		processMontrealModels();
+		processMontrealModels();
 //		processLpcodeDaModels();
-		processLpcodeDbModels();
+//		processLpcodeDbModels();
 	}
 	
 	/**

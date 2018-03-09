@@ -38,9 +38,10 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 		filters.add(Filter.I);
 		filters.add(Filter.F606W_ACS);
 		filters.add(Filter.F814W_ACS);
-		// Added by postprocessing models to compute G using colour transformations
-		// using {@link projects.gaiawd.exec.AddGaiaGBandToWdModels}
+		// Gaia magnitudes computed by Pierre Bergeron upon request, using nominal Gaia bands
 		filters.add(Filter.G);
+		filters.add(Filter.BP);
+		filters.add(Filter.RP);
 		// Montreal models provide the same filters for each atmosphere type
 		filtersByAtm.put(WdAtmosphereType.H, filters);
 		filtersByAtm.put(WdAtmosphereType.He, filters);
@@ -91,11 +92,18 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 		        	coolingTimeArray[p] = data[timeCol][nPoints - (p+1)];
 		        	magnitudeArray[p] = data[bandCol][nPoints - (p+1)];
 		        }
-		        mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));
+		        try {
+		        	mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));
+		        }
+		        catch(RuntimeException e) {
+		        	logger.log(Level.SEVERE, "Unable to load Montreal WD cooling model file "
+		        			+ "from "+name.toString(), e);
+		        }
+		        
 	        }
 	        catch (IOException e) {
 	        	logger.log(Level.SEVERE, "Unable to load Montreal WD cooling model file "
-	        			+ "from InputStream "+is.toString(), e);
+	        			+ "from "+name.toString(), e);
 				e.printStackTrace();
 	        }
 		}
@@ -115,13 +123,15 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
      * 		The passband
      * @param cols
      * 		Two-element int array; on exit, the elements will contain the indices of the columns that
-     * contain the cooling time [0] and desired magnitude [1].
+     * contain the cooling time [0] and desired magnitude [1]. Indexing is zero-based, i.e. first column
+     * has index 0.
      * @return 
      * 		The name of the file containing the corresponding WD model.
      */
     private static String resolveFileName(double mass, WdAtmosphereType atm, Filter band, int[] cols) {
     	
     	String directory = "";
+    	// Zero-based indexing of the columns
     	int timeCol = 0;
     	int bandCol = 0;
     	
@@ -167,9 +177,22 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 			directory = "hst";
 			break;
     	case G:
-    		timeCol = 26;
-			bandCol = 27;
-			directory = "standard_plus_G";
+    		timeCol = 20;
+			bandCol = 17;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case BP:
+    		timeCol = 20;
+			bandCol = 18;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case RP:
+    		timeCol = 20;
+			bandCol = 19;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
 			break;
 			
 		default:

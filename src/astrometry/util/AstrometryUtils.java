@@ -259,32 +259,46 @@ public class AstrometryUtils
 	 */
 	public static double[] convertPositionAndProperMotionEqToGal(double ra, double dec, double mu_acosd, double mu_d)
 	{
-		// Alternative method:
+		double l, b, mu_lcosb, mu_b;
+		
+		// Transform position via 3D rotation of unit vectors
 		double[] posAndMuGal = convertPositionAndProperMotion(ra, dec, mu_acosd, mu_d, Galactic.r_G_E);
 		
-		// Equivalent method from Radoslaw Poleski (2013)
-		double c1 = Math.sin(Galactic.NGPdec) * Math.cos(dec) - Math.cos(Galactic.NGPdec) * Math.sin(dec) * Math.cos(ra - Galactic.NGPra);
-		double c2 = Math.cos(Galactic.NGPdec) * Math.sin(ra - Galactic.NGPra);
-		double cos_b = Math.sqrt(c1*c1 + c2*c2);
+		l = posAndMuGal[0];
+		b = posAndMuGal[1];
+		mu_lcosb = posAndMuGal[2];
+		mu_b = posAndMuGal[3];
 		
-		double mu_lcosb = (c1 * mu_acosd + c2 * mu_d)/cos_b;
-		double mu_b = (-c2 * mu_acosd + c1 * mu_d)/cos_b;
+		// Alternative method from the Radoslaw Poleski (2013) paper:
 		
-//		System.out.println("Inputs:");
-//		System.out.println("RA       = "+ra);
-//		System.out.println("Dec      = "+dec);
-//		System.out.println("mu_acosd = "+mu_acosd*RADIANS_TO_MILLIARCSEC);
-//		System.out.println("mu_d     = "+mu_d*RADIANS_TO_MILLIARCSEC);
-//
-//		System.out.println("\nGalactic proper motions by Poleski method:");
-//		System.out.println("mu_lcosb = " + mu_lcosb*Units.RADIANS_TO_MILLIARCSEC);
-//		System.out.println("mu_b     = " + mu_b*Units.RADIANS_TO_MILLIARCSEC);
+//		// 1) Transform positions:
+//		
+//		// NOTE that there is an error in the equations 2 & 3: the "Galactic longitude of the ascending node of the galactic plane"
+//		// (which in itself doesn't make sense - it's the ascending node of the Equatorial plane) should be replaced with the
+//		// Galactic longitude of the North Celestial Pole.
+//		double sinb = Math.cos(dec)*Math.cos(Galactic.NGPdec)*Math.cos(ra - Galactic.NGPra) + Math.sin(dec)*Math.sin(Galactic.NGPdec);
+//		b = Math.asin(sinb);
+//		double cosb = Math.cos(b);
+//		double sinLoL = (1.0/cosb) * Math.cos(dec)*Math.sin(ra - Galactic.NGPra);
+//		double cosLoL = (1.0/cosb) * (Math.sin(dec)*Math.cos(Galactic.NGPdec) - Math.cos(dec)*Math.sin(Galactic.NGPdec)*Math.cos(ra - Galactic.NGPra));
+//		
+//		// Galactic longitude of the ascending node of the Equatorial plane (incorrect quantity to use)
+//		double l_OMEGA = Math.toRadians(32.93192);
+//		// Galactic longitude of the north celestial pole
+//		double l_NCP = Math.toRadians(122.932);
+//		
+//		l = l_NCP - Math.atan2(sinLoL, cosLoL);
+//		
+//		// 2) Transform proper motions:
+//		
+//		double c1 = Math.sin(Galactic.NGPdec) * Math.cos(dec) - Math.cos(Galactic.NGPdec) * Math.sin(dec) * Math.cos(ra - Galactic.NGPra);
+//		double c2 = Math.cos(Galactic.NGPdec) * Math.sin(ra - Galactic.NGPra);
+//		double cos_b = Math.sqrt(c1*c1 + c2*c2);
+//		
+//		mu_lcosb = (c1 * mu_acosd + c2 * mu_d)/cos_b;
+//		mu_b = (-c2 * mu_acosd + c1 * mu_d)/cos_b;
 		
-//		System.out.println("\nGalactic proper motions by transformation and projection method:");
-//		System.out.println("mu_lcosb = "+posAndMuGal[2]*Units.RADIANS_TO_MILLIARCSEC);
-//		System.out.println("mu_b     = "+posAndMuGal[3]*Units.RADIANS_TO_MILLIARCSEC);
-		
-		return new double[]{posAndMuGal[0], posAndMuGal[1], mu_lcosb, mu_b};
+		return new double[]{l, b, mu_lcosb, mu_b};
 	}
 	
 	/**

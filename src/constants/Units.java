@@ -51,6 +51,7 @@ public class Units
 
     /**
      * Converts velocities from parsecs per year to kilometres per second.
+     * 977799.3256774914
      */
     public static final double PARSECS_PER_YEAR_TO_KILOMETRES_PER_SECOND =  Units.PC_TO_KM / JULIAN_YEARS_TO_SECONDS;
 	

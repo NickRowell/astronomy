@@ -100,8 +100,8 @@ public class Galactic
 
 	
     //+++ Disks scaleheight [parsecs] +++//
-    private static final double thinDiskScaleheight  = 250.0;
-    private static final double thickDiskScaleheight = 1500.0;
+    public static final double thinDiskScaleheight  = 250.0;
+    public static final double thickDiskScaleheight = 1500.0;
     
     
     //+++++++++++++++++ Oort Constants +++++++++++++++++++++//

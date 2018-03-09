@@ -116,7 +116,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 //				Filter.F850LP, Filter.F892N,
 				Filter.U, Filter.B, Filter.V, Filter.R,
 				Filter.I, Filter.J, Filter.H, Filter.K,
-				Filter.G
+				Filter.G, Filter.BP, Filter.RP
 				//, Filter.L
 				);
 		Set<Filter> filtersH = new HashSet<>(filtersArrH);
@@ -129,7 +129,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 				Filter.F814W_ACS,
 //				Filter.F850LP, Filter.F892N,
 				Filter.U, Filter.B, Filter.V, Filter.R,	Filter.I,
-				Filter.G);
+				Filter.G, Filter.BP, Filter.RP);
 		Set<Filter> filtersHe = new HashSet<>(filtersArrHe);
 		
 		filtersByAtm.put(WdAtmosphereType.H, filtersH);
@@ -299,6 +299,8 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	    	case K:		return 30;
 //	    	case L:		return 31;
 	    	case G:		return 32;
+	    	case BP:	return 33;
+	    	case RP:	return 34;
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
 						" don't support filter "+band+" for atmosphere type "+WdAtmosphereType.H);
@@ -340,6 +342,8 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	    	case R:		return 26;
 	    	case I:		return 27;
 	    	case G:		return 28;
+	    	case BP:	return 29;
+	    	case RP:	return 30;
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
 						" don't support filter "+band+" for atmosphere type "+WdAtmosphereType.He);

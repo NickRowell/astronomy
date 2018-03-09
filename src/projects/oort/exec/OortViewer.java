@@ -256,16 +256,20 @@ public class OortViewer extends JPanel {
 			for(double y=ymin+ystep; y<ymax; y+=ystep) {
 				
 				// x & y components of the velocity vector at this point
-				double vx = (K+C)*kpc_to_pc*x + (A-B)*kpc_to_pc*y;
-				double vy = (A+B)*kpc_to_pc*x + (K-C)*kpc_to_pc*y;
+				double vx = (K+C)*x + (A-B)*y;
+				double vy = (A+B)*x + (K-C)*y;
+				
+				// Apply scale factor(s)
+				vx *= kpc_to_pc * s;
+				vy *= kpc_to_pc * s;
 				
 				// Start point of the arrow
-				double xa = x - (vx*s/2.0);
-				double ya = y - (vy*s/2.0);
+				double xa = x - (vx/2.0);
+				double ya = y - (vy/2.0);
 
 				// End point of the arrow
-				double xb = x + (vx*s/2.0);
-				double yb = y + (vy*s/2.0);
+				double xb = x + (vx/2.0);
+				double yb = y + (vy/2.0);
 
 				script.append("set arrow from "+xa+","+ya+" to "+xb+","+yb+" as 1").append(OSChecker.newline);
 

@@ -29,7 +29,7 @@ public class IMF_PowerLaw extends BaseImf
     private double A;
     
     /**
-     * Default constructor. The IMF exponent if initialised to -2.3.
+     * Default constructor. The IMF exponent if initialised to -2.35.
      */
     public IMF_PowerLaw()
     {

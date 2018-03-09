@@ -1,9 +1,15 @@
 package projects.tgas.exec;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
+
 import Jama.Matrix;
 import astrometry.util.AstrometryUtils;
 import constants.Galactic;
 import constants.Units;
+import projects.tgas.dm.TgasApassStar;
+import projects.tgas.util.TgasUtils;
 
 /**
  * Sandbox for the TGAS package.
@@ -31,14 +37,33 @@ public class Sandbox {
 	 */
 	public static void main(String[] args) {
 		
+		// Load the TGASxAPASS stars
+		Collection<TgasApassStar> tgasStars = TgasUtils.loadTgasApassCatalogue();
+		
+		// Load them into a Map to search by SourceID
+		Map<Long, TgasApassStar> tgasStarsBySrcId = new TreeMap<>();
+		for(TgasApassStar tgasStar : tgasStars) {
+			tgasStarsBySrcId.put(tgasStar.sourceId, tgasStar);
+		}
+		
+		examineTgasStar(tgasStarsBySrcId.get(6893434123671580672L));
+		examineTgasStar(tgasStarsBySrcId.get(6864020950679385344L));
+		examineTgasStar(tgasStarsBySrcId.get(6891489328121027072L));
+		examineTgasStar(tgasStarsBySrcId.get(6899588090252237184L));
+		
+	}
+	
+	
+	private static void examineTgasStar(TgasApassStar tgasStar) {
+		
 		// Degrees
-		double ra_deg = 112.606219;
-		double dec_deg = -10.378157;
+		double ra_deg = tgasStar.ra;
+		double dec_deg = tgasStar.dec;
 		// Milliarcseconds per year
-		double mu_racosd_masyr = -2.076;
-		double mu_dec_masyr = 0.706;
+		double mu_racosd_masyr = tgasStar.pmra;
+		double mu_dec_masyr = tgasStar.pmdec;
 		// Milliarcseconds
-		double parallax = 0.25;
+		double parallax = tgasStar.parallax;
 		
 		// Convert to distance [parsecs]
 		double d = 1000.0 / parallax;
@@ -107,14 +132,11 @@ public class Sandbox {
 		System.out.println("V    = " + p.get(1, 0)*Units.KILOMETRES_PER_SECOND_TO_METRES_PER_YEAR + " [m/yr]");
 		System.out.println("W    = " + p.get(2, 0)*Units.KILOMETRES_PER_SECOND_TO_METRES_PER_YEAR + " [m/yr]");
 		
-		
-		
-		
 		System.out.println("\nProjection matrix A:\n");
 		
 		AA.print(5, 5);
-		
-		
-		
 	}
+	
+	
+	
 }

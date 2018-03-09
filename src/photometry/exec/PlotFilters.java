@@ -20,14 +20,11 @@ public class PlotFilters {
 	 */
 	private static double lambdaStep = 10.0;
 	
-	public static void main(String[] args) throws IOException
-	{
+	public static void main(String[] args) throws IOException {
 		
 //		Filter[] filtersToPlot = new Filter[]{Filter.BP, Filter.RP, Filter.V, Filter.I};
-		Filter[] filtersToPlot = new Filter[]{Filter.SDSS_U, Filter.SDSS_G,Filter.SDSS_R,  Filter.SDSS_I,Filter.SDSS_Z, Filter.G};
-		
-		
-		
+//		Filter[] filtersToPlot = new Filter[]{Filter.SDSS_U, Filter.SDSS_G, Filter.SDSS_R, Filter.SDSS_I,Filter.SDSS_Z, Filter.G, Filter.BP, Filter.RP};
+		Filter[] filtersToPlot = new Filter[]{Filter.U, Filter.B, Filter.V, Filter.R,Filter.I, Filter.BP, Filter.RP};
 		
 		String script = 
 				"set terminal pngcairo enhanced color size 640,480" + OSChecker.newline + 
@@ -39,18 +36,15 @@ public class PlotFilters {
 				"set ylabel 'Transmission'" + OSChecker.newline +
 				"plot -10 notitle";
 		
-		for(Filter type : filtersToPlot)
-		{
+		for(Filter type : filtersToPlot) {
 			script += ", '-' w l title '"+type.toString()+"'";
 		}
 		
 		script += OSChecker.newline;
 		
-		for(Filter filter : filtersToPlot)
-		{
+		for(Filter filter : filtersToPlot) {
 			
-			for(double lambda = filter.lambdaMin; lambda<filter.lambdaMax; lambda+=lambdaStep)
-			{
+			for(double lambda = filter.lambdaMin; lambda<filter.lambdaMax; lambda+=lambdaStep) {
 				double x = filter.interpolate(lambda);
 				script += String.format("%f\t%f\n", lambda, x);
 				
