@@ -23,7 +23,7 @@ public class TestAstrometryUtils
 		double mu_b = 0.00001234;
 		
 		Matrix vtan = AstrometryUtils.getTangentialVelocityVector(1.0, ra, dec, mu_acosb, mu_b);
-		double[] motions = AstrometryUtils.getProperMotions(1.0, ra, dec, vtan);
+		double[] motions = AstrometryUtils.getProperMotionsFromTangentialVelocity(1.0, ra, dec, vtan);
 		
 		System.out.println("mu[0] = "+motions[0]);
 		System.out.println("mu[1] = "+motions[1]);

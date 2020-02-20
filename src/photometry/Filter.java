@@ -107,11 +107,17 @@ public enum Filter {
 	// Gaia nominal bands
 	
 	/** Nominal Gaia G band */
-	G("gaia/G_energy.txt","G"),
+	G_NOM_DR2("gaia/G_energy.txt","G"),
 	/** Nominal Gaia BP band */
-	BP("gaia/BP_energy.txt","BP"),
+	BP_NOM_DR2("gaia/BP_energy.txt","BP"),
 	/** Nominal Gaia RP band */
-	RP("gaia/RP_energy.txt","RP")
+	RP_NOM_DR2("gaia/RP_energy.txt","RP"),
+	/** Revised DR2 Gaia G band */
+	G_REV_DR2("gaia/G_energy.txt","G"),
+	/** Revised DR2 Gaia BP band */
+	BP_REV_DR2("gaia/BP_energy.txt","BP"),
+	/** Revised DR2 Gaia RP band */
+	RP_REV_DR2("gaia/RP_energy.txt","RP")
 	;
 	
 	/**
@@ -142,7 +148,7 @@ public enum Filter {
 	/**
 	 * Gaia nominal passbands
 	 */
-	public static Filter[] gaia = new Filter[]{Filter.G, Filter.BP, Filter.RP};
+	public static Filter[] gaia = new Filter[]{Filter.G_NOM_DR2, Filter.BP_NOM_DR2, Filter.RP_NOM_DR2};
 	
 	/**
 	 * Contains subdirectory path within src/resources/filters where

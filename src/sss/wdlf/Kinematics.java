@@ -6,8 +6,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
 
-import astrometry.ProperMotionDeprojection;
 import Jama.Matrix;
+import astrometry.ProperMotionDeprojection;
 
 
 /**

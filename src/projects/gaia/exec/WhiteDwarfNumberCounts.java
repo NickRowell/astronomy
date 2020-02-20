@@ -1,4 +1,4 @@
-package projects.gaiawd.exec;
+package projects.gaia.exec;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,7 +15,7 @@ import density.ExponentialDisk;
 import density.Uniform;
 import numeric.functions.Linear;
 import photometry.util.PhotometryUtils;
-import projects.gaiawd.util.GaiaParallaxErrFn;
+import projects.gaia.util.GaiaParallaxErrFn;
 import util.ParseUtil;
 
 /**

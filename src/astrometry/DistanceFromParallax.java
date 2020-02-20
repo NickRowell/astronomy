@@ -179,7 +179,7 @@ public class DistanceFromParallax {
 	public static double getDistanceExpDecreasingVolumeDensityPrior(double p, double sigma_p) {
 		
 		// Length scale for exponential cutoff [parsecs]
-		final double L = 5000.0;
+		final double L = 1000.0;
 		
 		// Threshold for floating point zero value: complex roots whose imaginary part is less than
 		// this are determined to be real, to within machine precision.

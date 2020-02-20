@@ -40,7 +40,7 @@ public class EffectiveWavenumberVsColour {
 		Filter fb = Filter.I;
 		
 		// Filter to modulate the source spectrum when computing the effective wavenumber
-		Filter fc = Filter.G;
+		Filter fc = Filter.G_NOM_DR2;
 		
 		// Two output files of datapoints for the two spectral sources
 		File outBlackbody = new File("/home/nrowell/Temp/nuEffVsVI_blackbody");

@@ -131,7 +131,7 @@ public class Galactic
     /**
      * Oort constant A, quantifying the azimuthal shear of the velocity field.
      * Units: km s^{-1} kpc^{-1}  [kilometres per second per kiloparsec]
-     * Source: Bovy (2015) [arXiv:1610.07610]
+     * Source: Bovy (2017) [arXiv:1610.07610]
      */
     public static final double A = 15.3;
     /**
@@ -142,7 +142,7 @@ public class Galactic
     /**
      * Oort constant B, quantifying the vorticity of the velocity field.
      * Units: km s^{-1} kpc^{-1}  [kilometres per second per kiloparsec]
-     * Source: Bovy (2015) [arXiv:1610.07610]
+     * Source: Bovy (2017) [arXiv:1610.07610]
      */
     public static final double B = -11.9;
     /**
@@ -153,7 +153,7 @@ public class Galactic
     /**
      * Oort constant C, quantifying the radial shear of the velocity field.
      * Units: km s^{-1} kpc^{-1}  [kilometres per second per kiloparsec]
-     * Source: Bovy (2015) [arXiv:1610.07610]
+     * Source: Bovy (2017) [arXiv:1610.07610]
      */
     public static final double C = -3.2;
     /**
@@ -164,7 +164,7 @@ public class Galactic
     /**
      * Oort constant K, quantifying the divergence of the velocity field.
      * Units: km s^{-1} kpc^{-1}  [kilometres per second per kiloparsec]
-     * Source: Bovy (2015) [arXiv:1610.07610]
+     * Source: Bovy (2017) [arXiv:1610.07610]
      */
     public static final double K = -3.3;
     /**

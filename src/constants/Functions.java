@@ -36,6 +36,8 @@ public class Functions {
 		// Wavelength in metres
 		double Lm = L*SpectroscopyUtils.ANGSTROMS_TO_METRES;
 	
+		// Note: to convert to photons-per-second, multiply by lambda / (h * c)
+		
 		return (2.0*h*c*c/Math.pow(Lm,5))/(Math.exp(h*c/(Lm*k*T)) - 1);
     }
 	

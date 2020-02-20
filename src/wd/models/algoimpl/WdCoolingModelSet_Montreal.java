@@ -36,12 +36,20 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 		filters.add(Filter.V);
 		filters.add(Filter.R);
 		filters.add(Filter.I);
+		filters.add(Filter.SDSS_U);
+		filters.add(Filter.SDSS_G);
+		filters.add(Filter.SDSS_R);
+		filters.add(Filter.SDSS_I);
+		filters.add(Filter.SDSS_Z);
 		filters.add(Filter.F606W_ACS);
 		filters.add(Filter.F814W_ACS);
 		// Gaia magnitudes computed by Pierre Bergeron upon request, using nominal Gaia bands
-		filters.add(Filter.G);
-		filters.add(Filter.BP);
-		filters.add(Filter.RP);
+		filters.add(Filter.G_NOM_DR2);
+		filters.add(Filter.BP_NOM_DR2);
+		filters.add(Filter.RP_NOM_DR2);
+		filters.add(Filter.G_REV_DR2);
+		filters.add(Filter.BP_REV_DR2);
+		filters.add(Filter.RP_REV_DR2);
 		// Montreal models provide the same filters for each atmosphere type
 		filtersByAtm.put(WdAtmosphereType.H, filters);
 		filtersByAtm.put(WdAtmosphereType.He, filters);
@@ -176,25 +184,72 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 			bandCol = 11;
 			directory = "hst";
 			break;
-    	case G:
-    		timeCol = 20;
+    	case SDSS_U:
+    		timeCol = 23;
+			bandCol = 12;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case SDSS_G:
+    		timeCol = 23;
+			bandCol = 13;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case SDSS_R:
+    		timeCol = 23;
+			bandCol = 14;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case SDSS_I:
+    		timeCol = 23;
+			bandCol = 15;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case SDSS_Z:
+    		timeCol = 23;
+			bandCol = 16;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case G_NOM_DR2:
+    		timeCol = 23;
 			bandCol = 17;
 			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
 			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
 			break;
-    	case BP:
-    		timeCol = 20;
+    	case BP_NOM_DR2:
+    		timeCol = 23;
 			bandCol = 18;
 			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
 			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
 			break;
-    	case RP:
-    		timeCol = 20;
+    	case RP_NOM_DR2:
+    		timeCol = 23;
 			bandCol = 19;
 			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
 			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
 			break;
-			
+    	case G_REV_DR2:
+    		timeCol = 23;
+			bandCol = 20;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case BP_REV_DR2:
+    		timeCol = 23;
+			bandCol = 21;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
+    	case RP_REV_DR2:
+    		timeCol = 23;
+			bandCol = 22;
+			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+			break;
 		default:
 			throw new IllegalArgumentException(WdCoolingModelSet_Montreal.class.getName()+" don't support filter "+band);
     	}

@@ -1,4 +1,4 @@
-package projects.gaiawd.exec;
+package projects.gaia.exec;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -171,7 +171,7 @@ public class WdlfFitter {
 		out.newLine();
 		
 		// Now regenerate the model for the G band
-		state.params.setFilter(Filter.G);
+		state.params.setFilter(Filter.G_NOM_DR2);
 
 		syntheticWDLF = solver.calculateWDLF(state);
 
@@ -309,7 +309,7 @@ public class WdlfFitter {
 		out.newLine();
 		
 		// Now regenerate the model for the G band
-		state.params.setFilter(Filter.G);
+		state.params.setFilter(Filter.G_NOM_DR2);
 
 		syntheticWDLF = solver.calculateWDLF(state);
 
@@ -448,7 +448,7 @@ public class WdlfFitter {
 		out.newLine();
 		
 		// Now regenerate the model for the G band
-		state.params.setFilter(Filter.G);
+		state.params.setFilter(Filter.G_NOM_DR2);
 
 		syntheticWDLF = solver.calculateWDLF(state);
 

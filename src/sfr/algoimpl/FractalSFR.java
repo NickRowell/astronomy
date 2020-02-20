@@ -7,6 +7,8 @@ import sfr.algo.BaseSfr;
 /**
  * Class represents a randomly generated Star Formation Rate model using fractal methods.
  * 
+ * TODO: the params getter/setter should set the levels of the SFR and not the fractal generation parameters
+ * 
  */
 public class FractalSFR extends BaseDiscreteSfr {
     	

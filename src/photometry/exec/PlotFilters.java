@@ -24,7 +24,7 @@ public class PlotFilters {
 		
 //		Filter[] filtersToPlot = new Filter[]{Filter.BP, Filter.RP, Filter.V, Filter.I};
 //		Filter[] filtersToPlot = new Filter[]{Filter.SDSS_U, Filter.SDSS_G, Filter.SDSS_R, Filter.SDSS_I,Filter.SDSS_Z, Filter.G, Filter.BP, Filter.RP};
-		Filter[] filtersToPlot = new Filter[]{Filter.U, Filter.B, Filter.V, Filter.R,Filter.I, Filter.BP, Filter.RP};
+		Filter[] filtersToPlot = new Filter[]{Filter.U, Filter.B, Filter.V, Filter.R,Filter.I, Filter.BP_NOM_DR2, Filter.RP_NOM_DR2};
 		
 		String script = 
 				"set terminal pngcairo enhanced color size 640,480" + OSChecker.newline + 

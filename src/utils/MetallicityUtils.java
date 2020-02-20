@@ -13,8 +13,14 @@ package utils;
  * @author nrowell
  * @version $Id$
  */
-public class MetallicityUtils {
+public final class MetallicityUtils {
 	
+	/**
+	 * Private constructor to enforce non-instantiability.
+	 */
+	private MetallicityUtils() {
+		
+	}
 	
 	/**
 	 * Solar Hydrogen mass fraction.

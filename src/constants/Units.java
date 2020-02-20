@@ -3,20 +3,20 @@ package constants;
 public class Units
 {
 	// Convert parsecs to other units
-	public static double PC_TO_M   = 3.0857e16;
-	public static double KPC_TO_M   = 3.0857e19;
-	public static double PC_TO_KM  = PC_TO_M/1000.0;
-	public static double KPC_TO_KM  = KPC_TO_M/1000.0;
-	public static double PC_TO_AU  = 206264.81;
-	public static double PC_TO_LYR = 3.2615638;
+	public static final double PC_TO_M   = 3.0857e16;
+	public static final double KPC_TO_M   = 3.0857e19;
+	public static final double PC_TO_KM  = PC_TO_M/1000.0;
+	public static final double KPC_TO_KM  = KPC_TO_M/1000.0;
+	public static final double PC_TO_AU  = 206264.81;
+	public static final double PC_TO_LYR = 3.2615638;
 	
 	// Reverse conversions
-	public static double M_TO_PC   = 1.0/PC_TO_M;
-	public static double M_TO_KPC   = 1.0/KPC_TO_M;
-	public static double KM_TO_PC  = 1.0/PC_TO_KM;
-	public static double KM_TO_KPC  = 1.0/KPC_TO_KM;
-	public static double AU_TO_PC  = 1.0/PC_TO_AU;
-	public static double LYR_TO_PC = 1.0/PC_TO_LYR;
+	public static final double M_TO_PC   = 1.0/PC_TO_M;
+	public static final double M_TO_KPC   = 1.0/KPC_TO_M;
+	public static final double KM_TO_PC  = 1.0/PC_TO_KM;
+	public static final double KM_TO_KPC  = 1.0/KPC_TO_KM;
+	public static final double AU_TO_PC  = 1.0/PC_TO_AU;
+	public static final double LYR_TO_PC = 1.0/PC_TO_LYR;
 
     /**
      * Converts angles from radians to arcseconds.

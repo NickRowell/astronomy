@@ -3,6 +3,7 @@ package kinematics;
 import Jama.Matrix;
 import astrometry.util.AstrometryUtils;
 import constants.Galactic;
+import numeric.stats.StatUtil;
 
 /**
  * 
@@ -344,7 +345,7 @@ public class TangentialVelocityDistribution
 		for(int i=0; i<N; i++)
 		{
 			// Draw random velocity for star in Galactic frame
-			Matrix v_G = AstrometryUtils.getRandomVector(covariance_G, mean_G);
+			Matrix v_G = StatUtil.drawRandomVector(covariance_G, mean_G);
 			
 			// Transform to Normal frame
 			Matrix v_N = r_N_G.times(v_G);

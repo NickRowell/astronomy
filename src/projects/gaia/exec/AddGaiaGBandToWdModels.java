@@ -1,4 +1,4 @@
-package projects.gaiawd.exec;
+package projects.gaia.exec;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

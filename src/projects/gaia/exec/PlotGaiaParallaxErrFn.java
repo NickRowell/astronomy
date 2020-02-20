@@ -1,6 +1,6 @@
-package projects.gaiawd.exec;
+package projects.gaia.exec;
 
-import projects.gaiawd.util.GaiaParallaxErrFn;
+import projects.gaia.util.GaiaParallaxErrFn;
 
 /**
  * Utility used to plot the Gaia parallax error function.

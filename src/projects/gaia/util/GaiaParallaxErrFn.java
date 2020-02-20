@@ -1,4 +1,4 @@
-package projects.gaiawd.util;
+package projects.gaia.util;
 
 import numeric.functions.MonotonicLinear;
 import numeric.integration.IntegrableFunction;

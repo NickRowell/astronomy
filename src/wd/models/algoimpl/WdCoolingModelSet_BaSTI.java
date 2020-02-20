@@ -62,7 +62,10 @@ public class WdCoolingModelSet_BaSTI extends WdCoolingModelSet {
 		List<Filter> filtersArr = Arrays.asList(Filter.M_BOL, Filter.U, Filter.B, Filter.V, Filter.R, Filter.I, Filter.J, Filter.H, Filter.K,
 		// HST bands
 		Filter.F435W_ACS, Filter.F475_ACS, Filter.F502N_ACS, Filter.F550M_ACS, Filter.F555W_ACS, Filter.F606W_ACS, Filter.F625W_ACS,
-		Filter.F658N_ACS, Filter.F660N_ACS, Filter.F775W_ACS, Filter.F814W_ACS, Filter.F850LP_ACS, Filter.F892N_ACS);
+		Filter.F658N_ACS, Filter.F660N_ACS, Filter.F775W_ACS, Filter.F814W_ACS, Filter.F850LP_ACS, Filter.F892N_ACS,
+		
+		// SDSS bands
+		Filter.SDSS_U, Filter.SDSS_G, Filter.SDSS_R, Filter.SDSS_I, Filter.SDSS_Z);
 		
 		Set<Filter> filters = new HashSet<>(filtersArr);
 		
@@ -118,10 +121,18 @@ public class WdCoolingModelSet_BaSTI extends WdCoolingModelSet {
 		        		magnitudeArray[p] = PhotometryUtils.logLL0toMbol(data[bandCol][p]);
 		        	}
 		        }
-		        mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));
+		        
+		        try {
+		        	MonotonicLinear track = new MonotonicLinear(coolingTimeArray, magnitudeArray);
+		        	mbolAsFnTcoolByMass.put(mass, track);
+		        }
+		        catch(IllegalArgumentException e) {
+		        	logger.log(Level.SEVERE, "Unable to interpolate BaSTI WD cooling track loaded from file " + name, e);
+					e.printStackTrace();
+		        }
 	        }
 	        catch (IOException e) {
-	        	logger.log(Level.SEVERE, "Unable to load Montreal WD cooling model file "
+	        	logger.log(Level.SEVERE, "Unable to load BaSTI WD cooling model file "
 	        			+ "from InputStream "+is.toString(), e);
 				e.printStackTrace();
 	        }
@@ -187,11 +198,21 @@ public class WdCoolingModelSet_BaSTI extends WdCoolingModelSet {
 	    		path = "HST_ACS/";
 	    		extension = "acs";
 	    		break;
+	    	// These correspond to the files in the SDSS directory
+	    	case SDSS_U:
+	    	case SDSS_G:
+	    	case SDSS_R:
+	    	case SDSS_I:
+	    	case SDSS_Z:
+	    		path = "SDSS/";
+	    		extension = "sdss";
+	    		break;
+	    		
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_BaSTI.class.getName()+" don't support filter "+band);
 		}
         
-        return String.format("%sCOOL%03.0fBaSTIfinale%s%s.%s",path,mass*100,spectral_type,phaseSep ? "sep" : "nosep", extension);
+        return String.format("%sCOOL%03.0fBaSTIfinale%s%s.%s", path, mass*100, spectral_type, phaseSep ? "sep" : "nosep", extension);
     }
     
     /**
@@ -230,6 +251,13 @@ public class WdCoolingModelSet_BaSTI extends WdCoolingModelSet {
 	    	case F814W_ACS:  return 14;
 	    	case F850LP_ACS: return 15;
 	    	case F892N_ACS:  return 16;
+	    	// These correspond to the files in the SDSS directory
+	    	case SDSS_U:  return 4;
+	    	case SDSS_G:  return 5;
+	    	case SDSS_R:  return 6;
+	    	case SDSS_I:  return 7;
+	    	case SDSS_Z:  return 8;
+	    	
 			default:
 				throw new IllegalArgumentException(WdCoolingModelSet_BaSTI.class.getName()+" don't support filter "+band);
     	}

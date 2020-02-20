@@ -16,12 +16,17 @@ import numeric.data.Range;
 import numeric.data.RangeMap;
 import numeric.functions.Linear;
 import photometry.util.PhotometryUtils;
+import projections.Aitoff;
+import projections.Projection;
+import projections.util.ProjectionUtil;
 import projects.tgas.dm.TgasApassStar;
 import projects.tgas.util.TgasUtils;
 
 /**
  * This class performs an analysis of the kinematics of Solar Neighbourhood stars using the TGAS data.
  * 
+ * TODO: compute and plot error on the mean velocity
+ * TODO: plot sky distribution of the selected sources in Galactic coordinates
  * TODO: add velocity dispersion computation
  * TODO: decide on colour bins to use
  * TODO: outlier rejection?
@@ -64,7 +69,7 @@ public class SeniorHonoursProject2017 {
 	/**
 	 * Distance threshold (to restrict to nearby stars) [parsec]
 	 */
-	static double d_max = 250.0;
+	static double d_max = 500.0;
 	
 	/**
 	 * Points along upper boundary of Main Sequence used for selection
@@ -128,11 +133,12 @@ public class SeniorHonoursProject2017 {
 		
 		// Compute the proper motion velocity vector and projection matrix for each star, and
 		// solve for the mean stellar motion in each colour bin.
-		Matrix[] meanVelocities = computeVelocities(colourPartitionedStars);
+		// TODO: now got error on mean
+		Matrix[][] meanVelocities = computeVelocities(colourPartitionedStars);
 		
 		// Correct the stellar motion for the mean motion in each colour bin; compute the
 		// scalar velocity dispersion in each colour bin.
-		double[][] velocityDisp = computeVelocityDispersion(colourPartitionedStars, meanVelocities);
+		double[][] velocityDisp = computeVelocityDispersion(colourPartitionedStars, meanVelocities[0]);
 		
 		// Plot the mean velocities and velocity dispersion
 		plotMeanVelocities(colourPartitionedStars.getRanges(), meanVelocities, velocityDisp);
@@ -187,26 +193,46 @@ public class SeniorHonoursProject2017 {
 	 * @param velocityDisp
 	 * 	Velocity dispersion in each colour bin.
 	 */
-	private static void plotVelocityVsS2(Range[] colours, Matrix[] meanVelocities, double[][] velocityDisp) {
+	private static void plotVelocityVsS2(Range[] colours, Matrix[][] meanVelocities, double[][] velocityDisp) {
 		
 		String[] labels = {"U", "V", "W"};
 		
-		for(int comp=0; comp<3; comp++) {
+		String[] lc = new String[]{"red", "green", "blue"};
 		
+		for(int comp=0; comp<3; comp++) {
+			
 			StringBuilder script = new StringBuilder();
 			script.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
 			script.append("set xrange [*:*]").append(OSChecker.newline);
-			script.append("set yrange [*:*]").append(OSChecker.newline);
+			script.append("set yrange [0:*]").append(OSChecker.newline);
 			script.append("set key top left").append(OSChecker.newline);
 			script.append("set xtics out").append(OSChecker.newline);
 			script.append("set ytics out").append(OSChecker.newline);
 			script.append("set xlabel 'S^{2}'").append(OSChecker.newline);
 			script.append("set ylabel '"+labels[comp]+" [km s^{-1}]'").append(OSChecker.newline);
-			script.append("plot '-' u 1:(-$2) w lp pt 5 ps 0.5 notitle").append(OSChecker.newline);
+			script.append("plot '-' u 1:(-$2) w p pt 5 ps 0.5 lc rgb '"+lc[comp]+"' notitle,");
+			script.append("     '-' u 1:(-$2):3 w yerrorbars pt 5 ps 0.5 lc rgb '"+lc[comp]+"' notitle").append(OSChecker.newline);
 			
 			for(int i=0; i<colours.length; i++) {
-				script.append(velocityDisp[i][0] + " " + meanVelocities[i].get(comp, 0)).append(OSChecker.newline);
+				
+				// Skip points redwards of Parenago's discontinuity as don't follow the age/colour correlation.
+				if(colours[i].mid() > 0.7) {
+					continue;
+				}
+				script.append(velocityDisp[i][0] + " " + meanVelocities[0][i].get(comp, 0)).append(OSChecker.newline);
 			}
+			script.append("e").append(OSChecker.newline);
+			
+
+			for(int i=0; i<colours.length; i++) {
+				
+				// Skip points redwards of Parenago's discontinuity as don't follow the age/colour correlation.
+				if(colours[i].mid() > 0.7) {
+					continue;
+				}
+				script.append(velocityDisp[i][0] + " " + meanVelocities[0][i].get(comp, 0) + " " + Math.sqrt(meanVelocities[1][i].get(comp, comp))).append(OSChecker.newline);
+			}
+			script.append("e").append(OSChecker.newline);
 			
 			try {
 				Gnuplot.displayImage(Gnuplot.executeScript(script.toString()));
@@ -225,7 +251,7 @@ public class SeniorHonoursProject2017 {
 	 * @param velocityDisp
 	 * 	Velocity dispersion in each colour bin.
 	 */
-	private static void plotMeanVelocities(Range[] colours, Matrix[] meanVelocities, double[][] velocityDisp) {
+	private static void plotMeanVelocities(Range[] colours, Matrix[][] meanVelocities, double[][] velocityDisp) {
 		StringBuilder script = new StringBuilder();
 		script.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
 		script.append("set xrange [*:*]").append(OSChecker.newline);
@@ -241,17 +267,17 @@ public class SeniorHonoursProject2017 {
 		script.append("     '-' u 1:2:3 w yerrorbars pt 5 ps 0.5 title 'S'").append(OSChecker.newline);
 		
 		for(int i=0; i<colours.length; i++) {
-			script.append(colours[i].mid() + " " + meanVelocities[i].get(0, 0)).append(OSChecker.newline);
+			script.append(colours[i].mid() + " " + meanVelocities[0][i].get(0, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
 		for(int i=0; i<colours.length; i++) {
-			script.append(colours[i].mid() + " " + meanVelocities[i].get(1, 0)).append(OSChecker.newline);
+			script.append(colours[i].mid() + " " + meanVelocities[0][i].get(1, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
 		for(int i=0; i<colours.length; i++) {
-			script.append(colours[i].mid() + " " + meanVelocities[i].get(2, 0)).append(OSChecker.newline);
+			script.append(colours[i].mid() + " " + meanVelocities[0][i].get(2, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
@@ -360,6 +386,9 @@ public class SeniorHonoursProject2017 {
 		// Display HR diagram of selected and unselected stars
 		displayHrDiagram(selectedStars, nonSelectedStars, upperMs, lowerMs);
 		
+		// Display the stars projected on the sky
+		displaySkyMap(colourPartitionedStars);
+		
 		return colourPartitionedStars;
 	}
 	
@@ -368,11 +397,13 @@ public class SeniorHonoursProject2017 {
 	 * 
 	 * @param colourPartitionedStars
 	 * 	A {@link RangeMap} containing all the selected {@link TgasApassStarWithVelocity} partitioned by colour.
+	 * @return
+	 *   TODO: describe return value
 	 */
-	private static Matrix[] computeVelocities(RangeMap<TgasApassStarWithVelocity> colourPartitionedStars) {
+	private static Matrix[][] computeVelocities(RangeMap<TgasApassStarWithVelocity> colourPartitionedStars) {
 
 		// Compute the mean velocity of the stars in each colour bin
-		Matrix[] meanVelocity = new Matrix[colourPartitionedStars.size()];
+		Matrix[][] meanVelocity = new Matrix[2][colourPartitionedStars.size()];
 		
 		for(int bin=0; bin<colourPartitionedStars.size(); bin++) {
 			
@@ -414,38 +445,37 @@ public class SeniorHonoursProject2017 {
 				star.A = AstrometryUtils.getProjectionMatrixA(l, b);
 				
 				// XXX
-				if(star.sourceId == 6894296003349866368L) {
-					System.out.println("\n\nSource ID = " + 6894296003349866368L);
-					System.out.println(String.format("Equatorial = (%f, %f)", star.ra, star.dec));
-					System.out.println(String.format("Galactic   = (%f, %f)", l, b));
-					System.out.println("A = ");
-					star.A.print(7, 7);
-				}
-				
+//				if(star.sourceId == 6894296003349866368L) {
+//					System.out.println("\n\nSource ID = " + 6894296003349866368L);
+//					System.out.println(String.format("Equatorial = (%f, %f)", star.ra, star.dec));
+//					System.out.println(String.format("Galactic   = (%f, %f)", l, b));
+//					System.out.println("A = ");
+//					star.A.print(7, 7);
+//				}
 				
 				meanP.plusEquals(star.p);
 				meanA.plusEquals(star.A);
 				
-				if(star.sourceId == 6894296003349866368L) {
-
-					StringBuilder str = new StringBuilder();
-					
-					str.append(String.format("Source ID = %d\n", star.sourceId));
-					str.append(String.format("RA        = %.5f [rad] (%.5f[deg])\n", Math.toRadians(star.ra), star.ra));
-					str.append(String.format("Dec       = %.5f [rad] (%.5f[deg])\n", Math.toRadians(star.dec), star.dec));
-					str.append(String.format("mua_cosd  = %.5e [rad/yr]\n", mu_acosd));
-					str.append(String.format("mu_d      = %.5e [rad/yr]\n", mu_d));
-					
-					str.append(String.format("l         = %.5f [rad] ( %.5f[deg])\n", l, Math.toDegrees(l)));
-					str.append(String.format("b         = %.5f [rad] ( %.5f[deg])\n", b, Math.toDegrees(b)));
-					str.append(String.format("mul_cosb  = %.5e [rad/yr]\n", mu_lcosb));
-					str.append(String.format("mul       = %.5e [rad/yr]\n", mu_lcosb / Math.cos(b)));
-					str.append(String.format("mu_b      = %.5e [rad/yr]\n", mu_b));
-					
-					str.append(String.format("Tangential velocity [km/s] = (%.3f, %.3f, %.3f)\n", star.p.get(0, 0), star.p.get(1, 0), star.p.get(2, 0)));
-					
-					System.out.println(str.toString());
-				}
+//				if(star.sourceId == 6894296003349866368L) {
+//
+//					StringBuilder str = new StringBuilder();
+//					
+//					str.append(String.format("Source ID = %d\n", star.sourceId));
+//					str.append(String.format("RA        = %.5f [rad] (%.5f[deg])\n", Math.toRadians(star.ra), star.ra));
+//					str.append(String.format("Dec       = %.5f [rad] (%.5f[deg])\n", Math.toRadians(star.dec), star.dec));
+//					str.append(String.format("mua_cosd  = %.5e [rad/yr]\n", mu_acosd));
+//					str.append(String.format("mu_d      = %.5e [rad/yr]\n", mu_d));
+//					
+//					str.append(String.format("l         = %.5f [rad] ( %.5f[deg])\n", l, Math.toDegrees(l)));
+//					str.append(String.format("b         = %.5f [rad] ( %.5f[deg])\n", b, Math.toDegrees(b)));
+//					str.append(String.format("mul_cosb  = %.5e [rad/yr]\n", mu_lcosb));
+//					str.append(String.format("mul       = %.5e [rad/yr]\n", mu_lcosb / Math.cos(b)));
+//					str.append(String.format("mu_b      = %.5e [rad/yr]\n", mu_b));
+//					
+//					str.append(String.format("Tangential velocity [km/s] = (%.3f, %.3f, %.3f)\n", star.p.get(0, 0), star.p.get(1, 0), star.p.get(2, 0)));
+//					
+//					System.out.println(str.toString());
+//				}
 				
 			}
 
@@ -456,7 +486,18 @@ public class SeniorHonoursProject2017 {
 			
 			// 1.7) Solve for the mean Solar motion
 			Matrix v = meanA.solve(meanP);
-			meanVelocity[bin] = v;
+			meanVelocity[0][bin] = v;
+			
+			// 1.8) Compute the error on the mean velocity
+			double meanPprimeSquared = 0.0;
+			for(TgasApassStarWithVelocity star : colourPartitionedStars.get(bin)) {
+				
+				Matrix pPrime = star.p.minus(star.A.times(v));
+				meanPprimeSquared += pPrime.normF()*pPrime.normF();
+			}
+			meanPprimeSquared /= n;
+			Matrix var_meanV = meanA.inverse().times(meanPprimeSquared/n);
+			meanVelocity[1][bin] = var_meanV;
 		}
 
 		return meanVelocity;
@@ -509,6 +550,33 @@ public class SeniorHonoursProject2017 {
 		return velocityDisp;
 	}
 	
+	
+	private static void displaySkyMap(RangeMap<TgasApassStarWithVelocity> stars) {
+		Projection proj = new Aitoff();
+		
+		List<double[]> points = new LinkedList<>();
+		
+		for(int bin=0; bin<stars.size(); bin++) {
+			
+			for(TgasApassStarWithVelocity star : stars.get(bin)) {
+				// Retrieve some fields for convenience
+				double ra  = Math.toRadians(star.ra);
+				double dec = Math.toRadians(star.dec);
+				double mu_acosd = star.pmra * Units.MILLIARCSEC_TO_RADIANS;
+				double mu_d = star.pmdec * Units.MILLIARCSEC_TO_RADIANS;
+				
+				// 1.2) Convert proper motion to Galactic coordinates
+				double[] mu_lb = AstrometryUtils.convertPositionAndProperMotionEqToGal(ra, dec, mu_acosd, mu_d);
+				double l = mu_lb[0];
+				double b = mu_lb[1];
+				
+				points.add(new double[]{l, b});
+			}
+		}
+
+		ProjectionUtil.makeAndDisplayJFreeChartPlot(points, "Sky distribution of selected DR1 sources", proj);
+	}
+	
 	/**
 	 * Create and display an HR diagram using the loaded data.
 	 * 
@@ -526,27 +594,27 @@ public class SeniorHonoursProject2017 {
 		StringBuilder script = new StringBuilder();
 		script.append("set terminal pngcairo enhanced color size 480,640").append(OSChecker.newline);
 		script.append("set xrange [-0.1:2]").append(OSChecker.newline);
-		script.append("set yrange [-2:10] reverse").append(OSChecker.newline);
+		script.append("set yrange [10:-2]").append(OSChecker.newline);
 		script.append("set key off").append(OSChecker.newline);
 		script.append("set xtics out").append(OSChecker.newline);
 		script.append("set ytics out").append(OSChecker.newline);
 		script.append("set xlabel 'B-V'").append(OSChecker.newline);
 		script.append("set ylabel 'M_{V}'").append(OSChecker.newline);
-		script.append("plot '-' u 1:2 w d lc rgbcolor 'black' notitle, ");
-		script.append("     '-' u 1:2 w d lc rgbcolor 'grey' notitle, ");
+		script.append("plot '-' u 1:2 w d lc rgbcolor 'grey' notitle, ");
+		script.append("     '-' u 1:2 w d lc rgbcolor 'black' notitle, ");
 		script.append("     '-' u 1:2 w l lc rgbcolor 'green' notitle, ");
 		script.append("     '-' u 1:2 w l lc rgbcolor 'green' notitle").append(OSChecker.newline);
+		
+		for(double[] data : nonSelectedStars) {
+			script.append(data[0] + " " + data[1]).append(OSChecker.newline);
+		}
+		script.append("e").append(OSChecker.newline);
 		
 		for(double[] data : selectedStars) {
 			script.append(data[0] + " " + data[1]).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(double[] data : nonSelectedStars) {
-			script.append(data[0] + " " + data[1]).append(OSChecker.newline);
-		}
-		script.append("e").append(OSChecker.newline);
-		
 		for(double bv=-0.1; bv<2.1; bv+=0.01) {
 			script.append(bv + " " + upper.interpolateY(bv)[0]).append(OSChecker.newline);
 		}

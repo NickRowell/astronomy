@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.geom.Ellipse2D;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
@@ -21,7 +20,6 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.TextAnchor;
 
-import infra.gui.IPanel;
 import infra.io.Gnuplot;
 import infra.jfree.XYShapeAndLineRenderer;
 import infra.os.OSChecker;
@@ -68,25 +66,7 @@ public class ProjectionUtil {
 		}
 		script.append("e").append(OSChecker.newline);
 		
-		BufferedImage plot = Gnuplot.executeScript(script.toString());
-		
-		final IPanel ipanel = new IPanel(plot);
-		
-		// Create and display the form
-        java.awt.EventQueue.invokeLater(
-                new Runnable() 
-                    {
-                        @Override
-                        public void run() 
-                        {
-                            JFrame tester = new JFrame();
-                            tester.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                            tester.setLayout(new BorderLayout());
-                            tester.add(ipanel, BorderLayout.CENTER);
-                            tester.pack();
-                            tester.setVisible(true);
-                        }
-                    });
+		Gnuplot.displayImage(Gnuplot.executeScript(script.toString()));
 	}
 	
 	/**
@@ -139,7 +119,6 @@ public class ProjectionUtil {
 		
 		for(double[][] line : linesLong) {
 			XYSeries gridLine = new XYSeries("", false);
-			System.out.println("\n\n");
 			for(double[] point : line) {
 				gridLine.add(point[0], point[1]);
 			}
@@ -152,7 +131,6 @@ public class ProjectionUtil {
 		
 		for(double[][] line : linesLat) {
 			XYSeries gridLine = new XYSeries("", false);
-			System.out.println("\n\n");
 			for(double[] point : line) {
 				gridLine.add(point[0], point[1]);
 			}
@@ -184,7 +162,7 @@ public class ProjectionUtil {
         
         renderer.setSeriesLinesVisible(nConstLong + nConstLat, false);
         renderer.setSeriesShapesVisible(nConstLong + nConstLat, true);
-        renderer.setSeriesShape(nConstLong + nConstLat, new Ellipse2D.Double(-0.5, -0.5, 1, 1));
+        renderer.setSeriesShape(nConstLong + nConstLat, new Ellipse2D.Double(-0.25, -0.25, 0.5, 0.5));
         renderer.setSeriesPaint(nConstLong + nConstLat, ChartColor.RED);
         
         // Configure axes
@@ -218,13 +196,10 @@ public class ProjectionUtil {
         
         // Configure chart
         JFreeChart chart = new JFreeChart(title, xyplot);
-        chart.addSubtitle(new TextTitle(proj.toString() + " Projection"));
+//        chart.addSubtitle(new TextTitle(proj.toString() + " Projection"));
         chart.removeLegend();
         chart.setBackgroundPaint(Color.white);
         
         return chart;
 	}
-	
-	
-
 }

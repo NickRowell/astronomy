@@ -30,12 +30,12 @@ public class TgasUtils {
 	/**
 	 * Path to the TGAS catalogue file.
 	 */
-	public static final File tgasCatFile = new File("/home/nrowell/Astronomy/Data/Gaia/TGAS/release/colours/tgas_tycho2.txt");
+	public static final File tgasCatFile = new File("/home/nrowell/Projects/Astronomy/Data/Gaia/TGAS/release/colours/tgas_tycho2.txt");
 
 	/**
 	 * Path to the TGAS/APASS cross-matched catalogue file.
 	 */
-	public static final File tgasApassCatFile = new File("/home/nrowell/Astronomy/Data/Gaia/TGAS/APASS_crossmatch/gaiadr1tgas_apassdr9.txt");
+	public static final File tgasApassCatFile = new File("/home/nrowell/Projects/Astronomy/Data/Gaia/TGAS/APASS_crossmatch/gaiadr1tgas_apassdr9.txt");
 	
 	/**
 	 * Loads the TGAS catalogue.

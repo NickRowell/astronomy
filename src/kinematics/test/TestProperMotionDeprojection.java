@@ -1,14 +1,21 @@
-package astrometry.test;
+package kinematics.test;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 
-import astrometry.ProperMotionDeprojection;
-import constants.Galactic;
-import numeric.geom.dim3.Vector3d;
-import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
+import astrometry.util.AstrometryUtils;
+import constants.Galactic;
+import kinematics.dm.AstrometricStar;
+import kinematics.util.ProperMotionDeprojection;
+import numeric.data.RangeMap;
+import numeric.stats.StatUtil;
+import projections.Aitoff;
+import projections.util.ProjectionUtil;
+import projects.gaia.lrh18.dm.GaiaSource;
 
 /**
 *
@@ -34,252 +41,412 @@ import Jama.Matrix;
 */
 public class TestProperMotionDeprojection {
 
-    //+++ Set kinematics of population used in simulation +++//
-    //
-    //  Mean motion in Galactic coordinate frame relative to Sun
+	/**
+	 * Ground truth mean motion in Galactic frame [km/s].
+	 */
     static Matrix meanThinDisk = new Matrix(new double[][]{{-8.62},{-20.04},{-7.1}});
-    //
-    //  Velocity ellipsoid in Galactic coordinate frame - can be non-diagonal
+
+
+    /**
+     * Ground truth velocity ellipsoid in Galactic frame.
+     */
     static Matrix ellipsoidThinDisk = new Matrix(new double[][]{{32.4*32.4, 0,         0},
                                                                 {0,         23.0*23.0, 0},
                                                                 {0,         0,         18.1*18.1}});
     
-    //+++ Radius of spherical volume in which to generate stars +++//
+    /**
+     * Maximum distance [parsecs].
+     */
     static double dmax = 1000;
+    
+    /**
+     * Minimum distance [parsecs].
+     */
     static double dmin = 10;
 
-    //+++ Size of Gaussian relative error to add to star distances to simulate measurement error +++//
-    static double sigma = 0.5;
+    /**
+     * Standard deviation on distance errors [parsecs]
+     */
+    static double sigma = 0.0;
 
-    //+++ Used to draw random velocities +++//
-    static Random normal = new Random();
+    /**
+     * Random number generator.
+     */
+    static Random random = new Random();
 
-    static Matrix I = Matrix.identity(3,3);
-
+    /**
+     * Main application entry point.
+     * 
+     * @param args
+     * 	The command line arguments (ignored)
+     */
     public static void main(String[] args){
 
-        //+++ Lower tangential velocity threshold for stars included in deprojection +++//
-        double vt_min = 0;
+        // Number of stars to be used in simulation
+        int N = 100000;
 
-        //+++ Calculate fraction of stars that pass this +++//
-        double N_pass = 0, N_fail = 0;
+        // Store the Stars
+        List<Star> stars = new ArrayList<Star>();
+        
+        // Populate array with stars with properties assigned randomly
+        for(int s=0; s<N; s++){
 
-        //+++ Get Eigenvalue decomposition of input velocity ellipsoid +++//
-        EigenvalueDecomposition evd = new EigenvalueDecomposition(ellipsoidThinDisk);
-
-        //+++ Use eigenvalues to draw random motion in frame defined by eigenvectors of velocity ellipsoid +++//
-        Matrix D = evd.getD();
-        Matrix V = evd.getV();
-
-        double diag1 = Math.sqrt(D.get(0, 0));
-        double diag2 = Math.sqrt(D.get(1, 1));
-        double diag3 = Math.sqrt(D.get(2, 2));
-
-
-        //+++ Set number of stars to be used in deprojection +++//
-        int N = 1000000;
-
-        //+++ Create ArrayList to store these +++//
-        ArrayList<Star> stars = new ArrayList<Star>();
-
-        //+++ Populate array with stars with properties assigned randomly +++//
-        for(int s=0; s<N;){
-
-            //+++ Randomly draw a 3D position +++//
-            Matrix r = Vector3d.getRandVecOnUnitSphere().mult(Math.random() * dmax).toColumnMatrix();
-
-
-            //+++ Draw random motion in frame composed of eigenvectors of velocity ellipsoid +++//
-            //+++ Each component is independant and normally distributed about zero, with    +++//
-            //+++ variance set by velocity dispersion.                                       +++//
-            double e1 = normal.nextGaussian() * diag1,
-                   e2 = normal.nextGaussian() * diag2,
-                   e3 = normal.nextGaussian() * diag3;
-
-            Matrix diag123 = new Matrix(new double[][]{{e1},{e2},{e3}});
-
-            //+++ Rotate this vector to Galactic coordinates +++//
-            Matrix UVW = V.times(diag123);
-
-            //+++ Add mean motion of population +++//
-            UVW.plusEquals(meanThinDisk);
-
-            Star star = new Star(r,UVW);
-
-            if(star.vt > vt_min){
-                stars.add(star);
-                N_pass++;
-                s++;
-                System.out.println("star "+s);
-            }
-            else N_fail++;
+        	if(10*(s+1)%N==0) {
+        		int nHash = 10*(s+1)/N/ + 1;
+        		StringBuilder str = new StringBuilder();
+        		str.append("Progress: [");
+        		for(int i=0; i<nHash; i++) {
+        			str.append("#");
+        		}
+        		for(int i=nHash; i<10; i++) {
+        			str.append(".");
+        		}
+        		str.append("]\r");
+        		System.out.print(str.toString());
+        	}
+        	
+        	// Random 3D space motion in Galactic coordinates
+        	Matrix uvw = StatUtil.drawRandomVector(ellipsoidThinDisk, meanThinDisk);
+        	
+        	// Transform this to equatorial coordinate frame
+        	Matrix xyz = Galactic.r_E_G.times(uvw);
+        	
+            // Random 3D position in equatorial coordinates
+        	double ra = AstrometryUtils.getRandomRa();
+        	double dec = AstrometryUtils.getRandomDec();
+        	double dist = AstrometryUtils.getRandomDistance(dmin, dmax);
+        	
+        	// Get the tangential velocity
+        	Matrix vtan = AstrometryUtils.getTangentialVelocityVector(ra, dec, xyz);
             
+        	// Project equatorial 3D space motion to get proper motion
+        	double[] mu = AstrometryUtils.getProperMotionsFromTangentialVelocity(dist, ra, dec, vtan);
+        	double mu_acosd = mu[0];
+        	double mu_d = mu[1];
+        	
+            stars.add(new Star(dist, ra, dec, mu_acosd, mu_d, uvw));
         }
         
-        System.out.println("Fraction of thin disk stars with velocities higher than "+vt_min+" kms^{-1}:"+
-                            "\n\n N_pass/(N_pass + N_fail) = "+N_pass+"/"+(N_pass+N_fail)+" = "+(N_pass/(N_pass+N_fail)));
-        
-        //+++ Verify velocity moments using intrinsic properties +++//
+        displaySkyMap(stars);
+        		
+        // Verify velocity moments using intrinsic properties
         double u=0.0, v=0.0, w=0.0;
         double uu=0.0, vv=0.0, ww=0.0;
         double uv=0.0, uw=0.0, vw=0.0;
 
-        for(int s=0; s<stars.size(); s++){
-
-            u += stars.get(s).getU(); uu += stars.get(s).getU()*stars.get(s).getU();
-            v += stars.get(s).getV(); vv += stars.get(s).getV()*stars.get(s).getV();
-            w += stars.get(s).getW(); ww += stars.get(s).getW()*stars.get(s).getW();
-
-            uv += stars.get(s).getU()*stars.get(s).getV();
-            uw += stars.get(s).getU()*stars.get(s).getW();
-            vw += stars.get(s).getV()*stars.get(s).getW();
+        for(Star star : stars){
+            u += star.u;
+            v += star.v;
+            w += star.w;
+            
+            uu += star.u*star.u;
+            vv += star.v*star.v;
+            ww += star.w*star.w;
+            
+            uv += star.u*star.v;
+            uw += star.u*star.w;
+            vw += star.v*star.w;
         }
 
-        u  /= (double)stars.size();  v /= (double)stars.size();  w /= (double)stars.size();
-        uu /= (double)stars.size(); vv /= (double)stars.size(); ww /= (double)stars.size();        
-        uv /= (double)stars.size(); uw /= (double)stars.size(); vw /= (double)stars.size();
+        u /= N;
+        v /= N;
+        w /= N;
+        uu /= N;
+        vv /= N;
+        ww /= N;        
+        uv /= N;
+        uw /= N;
+        vw /= N;
         
-        DecimalFormat xpxx = new DecimalFormat("0.00");
-        DecimalFormat xpx    = new DecimalFormat("0.0");
-
-        System.out.println("\nIntrinsic velocity moments for sampled synthetic population");
-        System.out.println("-------------------------------------------------------------");
-        System.out.println("\n<U> = "+xpxx.format(u)+"\t\n<V> = "+xpxx.format(v)+"\t\n<W> = "+xpxx.format(w));
-        System.out.println("\nVelocity dispersion tensor:");
-        System.out.println("[ "+xpx.format(Math.signum(uu - u*u)*Math.sqrt(Math.abs(uu - u*u)))+", "+xpx.format(Math.signum(uv - u*v)*Math.sqrt(Math.abs(uv - u*v)))+", "+xpx.format(Math.signum(uw - u*w)*Math.sqrt(Math.abs(uw - u*w))));
-        System.out.println("  "+xpx.format(Math.signum(uv - u*v)*Math.sqrt(Math.abs(uv - u*v)))+", "+xpx.format(Math.signum(vv - v*v)*Math.sqrt(Math.abs(vv - v*v)))+", "+xpx.format(Math.signum(vw - v*w)*Math.sqrt(Math.abs(vw - v*w))));
-        System.out.println("  "+xpx.format(Math.signum(uw - u*w)*Math.sqrt(Math.abs(uw - u*w)))+", "+xpx.format(Math.signum(vw - v*w)*Math.sqrt(Math.abs(vw - v*w)))+", "+xpx.format(Math.signum(ww - w*w)*Math.sqrt(Math.abs(ww - w*w)))+" ]");
-
-
-
-        //+++ Now do deprojection of proper motions on remaining stars +++//
-
-        ProperMotionDeprojection deprojection = new ProperMotionDeprojection();
+        System.out.println("Ground truth mean velocity and velocity dispersion:");
+        meanThinDisk.print(5, 5);
+        ellipsoidThinDisk.print(5, 5);
         
-        for(int s=0; s<stars.size(); s++){
+        System.out.println("\nIntrinsic velocity moments for sampled synthetic population:");
+        System.out.println(String.format("%.3f\n%.3f\n%.3f", u, v, w));
+        System.out.println("");
+        System.out.println(String.format("%.3f\t%.3f\t%.3f", (uu - u*u), (uv - u*v), (uw - u*w)));
+        System.out.println(String.format("%.3f\t%.3f\t%.3f", (uv - u*v), (vv - v*v), (vw - v*w)));
+        System.out.println(String.format("%.3f\t%.3f\t%.3f", (uw - u*w), (vw - v*w), (ww - w*w)));
+        
+        // Now do deprojection of proper motions on remaining stars
+		Matrix[] meanVelocity = ProperMotionDeprojection.computeMeanVelocity(stars);
+		
+//		double[] disp = ProperMotionDeprojection.computeScalarVelocityDispersion(stars);
+		
+		Matrix[] velocityEllipsoid = ProperMotionDeprojection.computeTensorVelocityDispersion(stars);
+		
+		System.out.println("\n\nMeasured velocity moments from proper motion deprojection:");
+		
+		double estU = meanVelocity[0].get(0, 0);
+		double sigma_estU = Math.sqrt(meanVelocity[1].get(0, 0));
+		double estV = meanVelocity[0].get(1, 0);
+		double sigma_estV = Math.sqrt(meanVelocity[1].get(1, 1));
+		double estW = meanVelocity[0].get(2, 0);
+		double sigma_estW = Math.sqrt(meanVelocity[1].get(2, 2));
+		
+		System.out.println(String.format("<U> = %.2f +/- %.6f", estU, sigma_estU));
+		System.out.println(String.format("<V> = %.2f +/- %.6f", estV, sigma_estV));
+		System.out.println(String.format("<W> = %.2f +/- %.6f", estW, sigma_estW));
+		
+		System.out.println("\nMeasured velocity dispersion matrix from proper motion deprojection:");
+		
+		double sig2_U = velocityEllipsoid[0].get(0, 0);
+		double sig_UV = velocityEllipsoid[0].get(1, 0);
+		double sig_UW = velocityEllipsoid[0].get(2, 0);
+		double sig2_V = velocityEllipsoid[0].get(3, 0);
+		double sig_VW = velocityEllipsoid[0].get(4, 0);
+		double sig2_W = velocityEllipsoid[0].get(5, 0);
+		
+		Matrix mat = new Matrix(new double[][]{{sig2_U, sig_UV, sig_UW},{sig_UV, sig2_V, sig_VW},{sig_UW, sig_VW, sig2_W}});
+		
+		mat.print(5, 5);
+		
+		System.out.println("\nStandard deviation on the elements of this:");
+		double sig2_sig2_U = Math.sqrt(velocityEllipsoid[1].get(0, 0));
+		double sig2_sig_UV = Math.sqrt(velocityEllipsoid[1].get(1, 1));
+		double sig2_sig_UW = Math.sqrt(velocityEllipsoid[1].get(2, 2));
+		double sig2_sig2_V = Math.sqrt(velocityEllipsoid[1].get(3, 3));
+		double sig2_sig_VW = Math.sqrt(velocityEllipsoid[1].get(4, 4));
+		double sig2_sig2_W = Math.sqrt(velocityEllipsoid[1].get(5, 5));
 
-        	double ra  = stars.get(s).ra;
-        	double dec = stars.get(s).dec;
-        	double ra_dot = stars.get(s).ra_dot;
-        	double dec_dot = stars.get(s).dec_dot;
-        	double dist = stars.get(s).d;
-        	double sigDist = sigma;
-        	
-        	
-        	deprojection.addObject(ra, dec, ra_dot, dec_dot, dist, sigDist);
-        	
-        }
-        
-        Matrix mean = deprojection.getMean();
-        
-        System.out.println("Mean velocity = "+mean.toString());
-        
+		Matrix mat2 = new Matrix(new double[][]{{sig2_sig2_U, sig2_sig_UV, sig2_sig_UW},{sig2_sig_UV, sig2_sig2_V, sig2_sig_VW},{sig2_sig_UW, sig2_sig_VW, sig2_sig2_W}});
+		
+		mat2.print(5, 5);
     }
+    
+    /**
+	 * Displays an all-sky map of the star positions.
+	 * @param stars
+	 * 	A {@link RangeMap} containing all of the {@link GaiaSource}s to plot.
+	 */
+	private static void displaySkyMap(Collection<? extends AstrometricStar> stars) {
+		
+		List<double[]> points = new LinkedList<>();
+		
+		for(AstrometricStar star : stars) {
+			// Rotate equatorial coordinates to Galactic coordinates
+			points.add(new double[]{star.getLong(), star.getLat()});
+		}
+	
+		ProjectionUtil.makeAndDisplayJFreeChartPlot(points, "Sky distribution of simulated stars", new Aitoff());
+	}
 }
 
 /**
- * Internal class used to represent star objects in main code. These have a very restricted set of
- * parameters relative to the star objects used in the main code.
+ * Private class used to represent star objects in the simulations.
  *
  * @author nickrowell
  */
 
+class Star implements AstrometricStar {
+	
+	/**
+	 * Main constructor for the {@link Star}.
+	 * 
+	 * @param d
+	 * 	Distance [parsecs]
+	 * @param ra
+	 * 	Right ascension [radians]
+	 * @param dec
+	 * 	Declination [radians]
+	 * @param mu_acosd
+	 * 	Proper motion parallel to equator [radians/yr]
+	 * @param mu_d
+	 * 	Proper motion perpendicualar to equator [radians/yr]
+	 * @param uvw
+	 * 	3D space motion in Galactic frame [km/s]
+	 */
+	public Star(double d, double ra, double dec, double mu_acosd, double mu_d, Matrix uvw) {
+		
+		// Get the distance to the star [parsecs]
+		this.d = d;
+		
+		// Retrieve some fields for convenience
+		
+		// 1) Convert proper motion to Galactic coordinates
+		double[] mu_lb = AstrometryUtils.convertPositionAndProperMotionEqToGal(ra, dec, mu_acosd, mu_d);
+		l = mu_lb[0];
+		b = mu_lb[1];
+		mu_lcosb = mu_lb[2];
+		mu_b = mu_lb[3];
+		
+		// We haven't added a component to the motion to account for differential rotation, so don't subtract it off.
+//		mu_lcosb = mu_lcosb - (A_RadYr * Math.cos(2 * l) + B_RadYr) * Math.cos(b);
+//		mu_b = mu_b + A_RadYr * Math.sin(2 * l) * Math.cos(b) * Math.sin(b);
+		
+		// 3) Convert to proper motion velocity vector
+		p = AstrometryUtils.getTangentialVelocityVector(this.d, l, b, mu_lcosb, mu_b);
+		
+		// 4) Compute the projection matrix A along the line of sight towards this star
+		A = AstrometryUtils.getProjectionMatrixA(l, b);
+		
+		// This will be computed later
+		pPrime = new Matrix(3,1);
+		
+		u = uvw.get(0, 0);
+		v = uvw.get(1, 0);
+		w = uvw.get(2, 0);
+	}
+	
+	/**
+	 * U component of the Galactic space velocity [km/s].
+	 */
+	public final double u;
 
-class Star{
+	/**
+	 * V component of the Galactic space velocity [km/s].
+	 */
+	public final double v;
 
+	/**
+	 * W component of the Galactic space velocity [km/s].
+	 */
+	public final double w;
+	
+	/**
+	 * The Galactic longitude [radians]
+	 */
+	public double l;
+	
+	/**
+	 * The Galactic latitude [radians]
+	 */
+	public double b;
+	
+	/**
+	 * The proper motion in Galactic longitude, including cosine factor [radians/yr]
+	 */
+	public double mu_lcosb;
+	
+	/**
+	 * The proper motion in Galactic latitude [radians/yr]
+	 */
+	public double mu_b;
+	
+	/**
+	 * The distance to the star [parsecs]
+	 */
+	public double d;
+	
+	/**
+	 * The proper motion velocity vector (i.e. tangential velocity).
+	 */
+	public Matrix p;
+	
+	/**
+	 * The proper motion velocity vector (i.e. tangential velocity) minus the mean motion, i.e.
+	 * the peculiar motion for this star from which the velocity dispersion is measured.
+	 */
+	public Matrix pPrime;
+	
+	/**
+	 * The projection matrix A that projects the 3D velocity onto the celestial sphere.
+	 */
+	public Matrix A;
 
-    /*
-     * Observational quantities, calculated from randomly assigned intrinsic properties.
-     *
-     */
+	@Override
+	public double getLong() {
+		return l;
+	}
 
-    //+++ Position on sky +++//
-    double ra, dec;
+	@Override
+	public double getLat() {
+		return b;
+	}
 
-    //+++ Rate of change of each coordinate +++//
-    double ra_dot, dec_dot;
+	@Override
+	public double getMuLCosB() {
+		return mu_lcosb;
+	}
 
-    //+++ Proper motion, arcseconds per year +++//
-    double mu = 0.0;
+	@Override
+	public double getMuB() {
+		return mu_b;
+	}
 
-    //+++ Line of sight distance +++//
-    double d;
+	@Override
+	public double getDistance() {
+		return d;
+	}
 
-    //+++ Distance error +++//
-    double sigma_d;
+	@Override
+	public Matrix getP() {
+		return p;
+	}
 
-    //+++ Tangential velocity +++//
-    double vt = 0.0;
+	@Override
+	public void setP(Matrix p) {
+		this.p = p;
+	}
 
-    /*
-     * Intrinsic properties, hidden from main code.
-     *
-     */
+	@Override
+	public Matrix getPPrime() {
+		return pPrime;
+	}
 
-    //+++ Position vector +++//
-    Matrix r = new Matrix(3,1);
+	@Override
+	public void setPPrime(Matrix pPrime) {
+		this.pPrime = pPrime;
+	}
 
-    //+++ Velocity vector referred to Galactic, equatorial and Normal triads +++//
-    Matrix UVW = new Matrix(3,1);
-    Matrix XYZ = new Matrix(3,1);
-    Matrix PQR = new Matrix(3,1);
+	@Override
+	public Matrix getA() {
+		return A;
+	}
 
-    public Star(Matrix R, Matrix uvw){
-
-        //+++ Set intrinsic quantities +++//
-        // Galactic velocity
-        UVW.set(0,0,uvw.get(0, 0));
-        UVW.set(1,0,uvw.get(1, 0));
-        UVW.set(2,0,uvw.get(2, 0));
-        // Celestial position vector
-        r.set(0, 0, R.get(0, 0));
-        r.set(1, 0, R.get(1, 0));
-        r.set(2, 0, R.get(2, 0));
-
-        //+++ Distance +++//
-        d = Math.sqrt(r.get(0,0)*r.get(0,0) + r.get(1,0)*r.get(1,0) + r.get(2,0)*r.get(2,0));
-
-        //+++ Calculate ra and dec +++//
-        Matrix r_hat = r.times(1.0/r.normF());
-        dec = Math.asin(r_hat.get(2,0));
-        ra = Math.atan2(r_hat.get(1,0), r_hat.get(0,0));
-
-        //+++ Refer velocity vector to equatorial triad +++//
-        XYZ = Galactic.r_E_G.times(UVW);
-
-        //+++ Now refer velocity to Normal triad, and get components perp. and par. to equator +++//
-		double[][] ntr = {{-1*Math.sin(ra), -1*Math.sin(dec)*Math.cos(ra),Math.cos(dec)*Math.cos(ra)},
-	                          {Math.cos(ra),-1*Math.sin(dec)*Math.sin(ra),Math.cos(dec)*Math.sin(ra)},
-	                          {0,Math.cos(dec),Math.sin(dec)}};
-		Matrix NTR = new Matrix(ntr);
-		Matrix RTN = NTR.transpose();
-
-        //+++ Velocity referred to Normal triad +++//
-        PQR = RTN.times(XYZ);
-
-        //+++ Get component of proper motion perpendicular to equator, i.e. declination +++//
-        // Q component is corresponding velocity
-        dec_dot = PQR.get(1,0)/(4.74*d);
-        //+++ Get component parallel to equator, i.e. right ascension +++//
-        ra_dot = PQR.get(0,0)/(4.74*d);
-
-        //+++ Get total angular motion +++//
-        mu = Math.sqrt(dec_dot*dec_dot + ra_dot*ra_dot);
-
-        //+++ Convert this to tangential velocity +++//
-        vt = mu * 4.74 * d;
-
-        //+++ Convert ra to a rate of change in the coordinate. This is used in deprojection. +++//
-        ra_dot = ra_dot / Math.cos(dec);
-
-        //+++ Add error to distance +++//
-        sigma_d = TestProperMotionDeprojection.normal.nextGaussian()*(TestProperMotionDeprojection.sigma*d);
-        d = d + sigma_d;
-
-    }
-
-    public double getU(){ return UVW.get(0,0);}
-    public double getV(){ return UVW.get(1,0);}
-    public double getW(){ return UVW.get(2,0);}
-
+	@Override
+	public void setA(Matrix a) {
+		this.A = a;
+	}
+	
+	@Override
+	public Matrix getU() {
+		
+		// Compute the vector u for this star
+		double[][] u = new double[6][1];
+		
+		// Loop over mixed products of the peculiar velocity components
+		int n=3;
+		for(int i=0; i<n; i++) {
+			for(int k=i; k<n; k++) {
+				
+				// Index into 1D array
+				int t = (n*(n-1)/2) - (n-i-1)*(n-i)/2 + k;
+				
+				u[t][0] += pPrime.get(i, 0) * pPrime.get(k, 0);
+			}
+		}
+		
+		return new Matrix(u);
+	}
+	
+	@Override
+	public Matrix getB() {
+		
+		// Compute the matrix B for this star
+		double[][] b = new double[6][6];
+		
+		// Loop over mixed products of the projection matrix components
+		int n=3;
+		for(int i=0; i<n; i++) {
+			for(int k=i; k<n; k++) {
+				
+				// Index into 1D array
+				int t = (n*(n-1)/2) - (n-i-1)*(n-i)/2 + k;
+				
+				for(int j=0; j<n; j++) {
+					for(int l=j; l<n; l++) {
+						
+						// Second index into 2D array
+						int v = (n*(n-1)/2) - (n-j-1)*(n-j)/2 + l;
+						
+						b[t][v] += (A.get(i, j) * A.get(k, l) + A.get(k, j) * A.get(i, l)) / 2;
+					}
+				}
+			}
+		}
+		
+		return new Matrix(b);
+	}
 }

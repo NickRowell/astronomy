@@ -2,23 +2,25 @@ package astrometry.util;
 
 import java.util.Random;
 
+import Jama.Matrix;
 import constants.Galactic;
 import constants.Units;
-import Jama.EigenvalueDecomposition;
-import Jama.Matrix;
 
 /**
  * Utilities for astrometry.
- *
- * TODO: test the proper motion conversion method against known values
- *
+ * 
  * @author nrowell
  * @version $Id$
  */
-public class AstrometryUtils
+public final class AstrometryUtils
 {
 	// Random number generator
     static Random random = new Random();
+    
+    /**
+     * Private constructor to enforce non-instantiability.
+     */
+    private AstrometryUtils() {}
 	
     /**
 	 * Equation relating proper motion, distance and tangential velocity.
@@ -183,8 +185,8 @@ public class AstrometryUtils
 		Matrix r_G_sph = cartesianToSphericalPolar(r_G);
 		
 		// Extract longitude and latitude
-		double longitude = r_G_sph.get(1,0);
-		double latitude  = r_G_sph.get(2,0);
+		double longitude = r_G_sph.get(1, 0);
+		double latitude  = r_G_sph.get(2, 0);
 		
 		return new double[]{longitude, latitude};
 	}
@@ -238,7 +240,7 @@ public class AstrometryUtils
 		Matrix vt_out = A.times(vt_in);
 		
 		// 3) Project onto the sky to get the angular motion
-		double[] mu_out = getProperMotions(1.0, pos_out[0], pos_out[1], vt_out);
+		double[] mu_out = getProperMotionsFromTangentialVelocity(1.0, pos_out[0], pos_out[1], vt_out);
 		
 		return new double[]{pos_out[0], pos_out[1], mu_out[0], mu_out[1]};
 	}
@@ -259,18 +261,13 @@ public class AstrometryUtils
 	 */
 	public static double[] convertPositionAndProperMotionEqToGal(double ra, double dec, double mu_acosd, double mu_d)
 	{
-		double l, b, mu_lcosb, mu_b;
-		
 		// Transform position via 3D rotation of unit vectors
-		double[] posAndMuGal = convertPositionAndProperMotion(ra, dec, mu_acosd, mu_d, Galactic.r_G_E);
+		return convertPositionAndProperMotion(ra, dec, mu_acosd, mu_d, Galactic.r_G_E);
 		
-		l = posAndMuGal[0];
-		b = posAndMuGal[1];
-		mu_lcosb = posAndMuGal[2];
-		mu_b = posAndMuGal[3];
-		
-		// Alternative method from the Radoslaw Poleski (2013) paper:
-		
+//		// Alternative method from the Radoslaw Poleski (2013) paper:
+//		
+//		double l, b, mu_lcosb, mu_b;
+//		
 //		// 1) Transform positions:
 //		
 //		// NOTE that there is an error in the equations 2 & 3: the "Galactic longitude of the ascending node of the galactic plane"
@@ -297,8 +294,7 @@ public class AstrometryUtils
 //		
 //		mu_lcosb = (c1 * mu_acosd + c2 * mu_d)/cos_b;
 //		mu_b = (-c2 * mu_acosd + c1 * mu_d)/cos_b;
-		
-		return new double[]{l, b, mu_lcosb, mu_b};
+//		return new double[]{l, b, mu_lcosb, mu_b};
 	}
 	
 	/**
@@ -350,6 +346,33 @@ public class AstrometryUtils
 	}
 	
 	/**
+	 * Get the tangential velocity vector from the full 3D space motion and the direction to the star.
+	 * 
+	 * @param ra
+	 * 	Angular coordinate parallel to the equator (e.g. right ascension, longitude etc) [radians]
+	 * @param dec
+	 * 	Angular coordinate perpendicular to the equator (e.g. declination, latitude etc) [radians]
+	 * @param v
+	 * 	A 3x1 JAMA Matrix containing the components of the 3D space velocity vector, in the same coordinate
+	 * frame as the angular coordinates [km/s]
+	 * @return
+	 * 	A 3x1 JAMA Matrix containing the components of the tangential velocity vector, in the same coordinate
+	 * frame as the angular coordinates [km/s]
+	 */
+	public static Matrix getTangentialVelocityVector(double ra, double dec, Matrix v) {
+		
+		// 1) Transform v to the normal frame
+		// 2) Set the line-of-sight velocity to zero
+		// 3) Transform resulting velocity vector back to original frame
+		Matrix r_N_E = getNormalFrame(ra, dec);
+		Matrix v_N = r_N_E.times(v);
+		v_N.set(2, 0, 0.0);
+		Matrix vtan_E = r_N_E.transpose().times(v_N);
+		
+		return vtan_E;
+	}
+	
+	/**
 	 * Converts the tangential velocity of an object to the equivalent proper motion, viewed at the
 	 * given distance.
 	 * 
@@ -371,7 +394,7 @@ public class AstrometryUtils
 	 * @return		The angular velocity (proper motion) parallel and perpendicular to the equator (i.e.
 	 * 				includes the cos(dec) factor in the motion parallel to the equator) [radians/yr]
 	 */
-	public static double[] getProperMotions(double d, double ra, double dec, Matrix vtan) {
+	public static double[] getProperMotionsFromTangentialVelocity(double d, double ra, double dec, Matrix vtan) {
 		
 		// Retrieve the components and divide out the distance
 		double x_dot = vtan.get(0, 0) / d;
@@ -456,6 +479,7 @@ public class AstrometryUtils
 	
 	/**
 	 * Computes the angular separation of two points specified in angular coordinates.
+	 * 
 	 * @param RA1
 	 * 	The right ascension/longitude of the first point [radians]
 	 * @param dec1
@@ -473,49 +497,8 @@ public class AstrometryUtils
 	}
 	
 	/**
-	 * Utility to generate realizations of a random vector described by
-	 * a mean and covariance matrix.
-	 * 
-	 * @param covar		NxN covariance matrix on vector elements.
-	 * @param mean		Nx1 column vector containing mean of random vector.
-	 * @return			Random vector drawn from input distribution.
-	 */
-	public static Matrix getRandomVector(Matrix covar, Matrix mean)
-	{
-
-        // How many elements to draw?
-        int N = covar.getColumnDimension();     
-        
-        // Basic checks on matrix sizes and shapes etc.
-        if(covar.getColumnDimension()!=covar.getRowDimension())
-            throw new RuntimeException();
-        if(mean.getColumnDimension()!=1 || mean.getRowDimension()!=N)
-            throw new RuntimeException();
-                
-        // Get Eigenvalue decomposition of covariance matrix
-        EigenvalueDecomposition eig = covar.eig();
-        
-        // Get dispersions along the principal axes of the covariance hyper-ellipsoid
-        Matrix evals = eig.getD();
-        
-        // Random vector in principal axes frame
-        Matrix rand = new Matrix(N,1);
-        
-        // Draw elements from unit Gaussian and scale according to axis sigma
-        for(int d=0; d<N; d++)
-            rand.set(d, 0, Math.sqrt(evals.get(d, d))*random.nextGaussian());
-        
-        // Transform this back to original frame using eigenvectors
-        // of covariance matrix
-        rand = eig.getV().times(rand);    
-                
-        // Add random error onto mean and return
-        return mean.plus(rand);
-        
-	}
-	
-	/**
 	 * Compute and return a random coordinate distributed uniformly on the celestial sphere.
+	 * 
 	 * @return
 	 * 	Array of two doubles containing the angular coordinates of the point [radians].
 	 */
@@ -526,27 +509,55 @@ public class AstrometryUtils
 	/**
 	 * Compute a random right ascension / longitude coordinate for points uniformly
 	 * distributed on the unit sphere.
+	 * 
 	 * @return
 	 * 	A random right ascension / longitude coordinate for points uniformly
 	 * distributed on the unit sphere [radians]
 	 */
 	public static double getRandomRa() {
-		return 2*Math.PI*Math.random();
+		return 2*Math.PI*random.nextDouble();
 	}
 	
 	/**
 	 * Compute a random declination / latitude coordinate for points uniformly
 	 * distributed on the unit sphere.
+	 * 
 	 * @return
 	 * 	A random declination / latitude coordinate for points uniformly
 	 * distributed on the unit sphere [radians]
 	 */
 	public static double getRandomDec() {
-		return Math.asin(2*Math.random() - 1);
+		return Math.asin(2*random.nextDouble() - 1);
+	}
+	
+	/**
+	 * Compute a random distance between the given limits, such that points are uniformly distributed
+	 * within a 3D sphere.
+	 * 
+	 * @param dmin
+	 * 	The minimum distance [arbitrary units]
+	 * @param dmax
+	 * 	The maximum distance [arbitrary units]
+	 * @return
+	 * 	A random distance within the range [dmin:dmax] such that points are uniformly distributed
+	 * within a 3D sphere [same units as the inputs]
+	 */
+	public static double getRandomDistance(double dmin, double dmax) {
+		
+		// Probability that point lies at distance less than d = (d^3 - dmin^3)/(dmax^3 - dmin^3)
+		// Scale [dmin:dmax] -> [0:1] for convenience
+		
+		// Random variable in [0:1]
+		double u3 = random.nextDouble();
+		double u = Math.cbrt(u3);
+		double d = dmin + u * (dmax - dmin);
+		
+		return d;
 	}
 	
 	/**
 	 * Converts an angle in the range [0:2*PI] to the hours, minutes, seconds representation.
+	 * 
 	 * @param angle
 	 * 	The angle to convert [radians]. If it doesn't lie in the range [0:2*PI] then it is
 	 * first translated to this range by adding or subtracting multiples of 2*PI.
@@ -574,6 +585,7 @@ public class AstrometryUtils
 	 * representation. The angle can be positive or negative. If it lies outside the
 	 * range [-2*PI : 2*PI] then it is first translated to this range by adding or
 	 * subtracting multiples of 2*PI.
+	 * 
 	 * @param angle
 	 * 	The angle to convert [radians]
 	 * @return
@@ -607,6 +619,7 @@ public class AstrometryUtils
 	
 	/**
 	 * Converts an angle from HH:MM:SS.s format to decimal radians.
+	 * 
 	 * @param hour
 	 * 	The hours (a whole number).
 	 * @param min
@@ -627,6 +640,7 @@ public class AstrometryUtils
 	
 	/**
 	 * Converts an angle from +/-DD:MM:SS.s format to decimal radians.
+	 * 
 	 * @param sign
 	 * 	Indicates the sign of the angle; must be +/-1. This is required as a separate
 	 * argument in order to handle angles between [-1:0], which would otherwise be 
@@ -665,12 +679,12 @@ public class AstrometryUtils
 		if(angle < 0) {
 			// Add multiples of 2*pi
 			double multiplesOfTwoPiToAdd = Math.floor(-angle/(2*Math.PI)) + 1;
-			return angle + multiplesOfTwoPiToAdd*2*Math.PI;
+			return angle + multiplesOfTwoPiToAdd*2.0*Math.PI;
 		}
 		else if(angle > 2*Math.PI) {
 			// Subtract multiples of 2*pi
 			double multiplesOfTwoPiToSubtract = Math.floor(angle/(2*Math.PI));
-			return angle - multiplesOfTwoPiToSubtract*2*Math.PI;
+			return angle - multiplesOfTwoPiToSubtract*2.0*Math.PI;
 		}
 		else {
 			// Angle is in the desired range
@@ -681,6 +695,7 @@ public class AstrometryUtils
 	/**
 	 * Translate an angle to the equivalent angle in the range [-2*PI:2*PI]. The
 	 * sign of the angle is not changed.
+	 * 
 	 * @param angle
 	 * 	The angle [radians]
 	 * @return
@@ -719,6 +734,7 @@ public class AstrometryUtils
 	
 	/**
 	 * Takes the appropriate action if a user tries to naively invert the parallax to get the distance.
+	 * 
 	 * @param pi
 	 * 	The stellar parallax [arcseconds]
 	 * @return
