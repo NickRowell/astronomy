@@ -254,13 +254,12 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
 		//  - followed by a string of digits
 		String[] parts = dirName.split("((?<=[zy])|(?=[zy]))");
 		
-		// This will split 'z0004y23' into ['','z','0004','y','23'].
-		// We get an empty element, then four elements containing the metallicity parts.
-		if(parts.length!=5) {
+		// This will split 'z0004y23' into ['z','0004','y','23'].
+		if(parts.length!=4) {
 			return false;
 		}
 		// Check the metallicity flags are present
-		if(!(parts[0].equalsIgnoreCase("") && parts[1].equalsIgnoreCase("z") && parts[3].equalsIgnoreCase("y"))) {
+		if(!(parts[0].equalsIgnoreCase("z") && parts[2].equalsIgnoreCase("y"))) {
 			return false;
 		}
 		
@@ -268,8 +267,8 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
 		// we add a '0.' to the start of the string before parsing in order to get the right units.
 		double z,y;
 		try {
-			z = Double.parseDouble("0."+parts[2]);
-			y = Double.parseDouble("0."+parts[4]);
+			z = Double.parseDouble("0."+parts[1]);
+			y = Double.parseDouble("0."+parts[3]);
 		}
 		catch(NumberFormatException e) {
 			// Couldn't parse the Metallicity values
@@ -393,6 +392,7 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
 			if(!pathname.isDirectory()) {
 				return false;
 			}
+			
 			return parseMetallicity(pathname.getName(), new double[2]);
 		}
 	}
