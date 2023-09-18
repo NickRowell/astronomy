@@ -10,6 +10,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -18,7 +19,6 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import infra.gui.IPanel;
 import infra.io.Gnuplot;
 import infra.os.OSChecker;
 import numeric.functions.MonotonicLinear;
@@ -35,7 +35,7 @@ import wd.models.infra.WdCoolingModels;
  * @author nrowell
  * @version $Id$
  */
-public class PlotWdCoolingModels {
+public class PlotWdCoolingModelsMagVsTcool {
 	
 	/**
 	 * Cooling time range [yr], lower boundary.
@@ -104,8 +104,10 @@ public class PlotWdCoolingModels {
         final double massMin = 0.4;
 		final double massMax = 1.2;
 		final JSlider massSlider = GuiUtil.buildSlider(massMin, massMax, 2, "%4.2f");
-		
-		final IPanel ipanel = new IPanel(plotWdCoolingModels());
+
+        JLabel label = new JLabel("");
+        final ImageIcon icon = new ImageIcon(plotWdCoolingModels());
+        label.setIcon(icon);
 		
         ActionListener al = new ActionListener() {
             @Override
@@ -131,7 +133,8 @@ public class PlotWdCoolingModels {
             		filter = (Filter)filterComboBox.getSelectedItem();
             	}
             	try {
-					ipanel.setImage(plotWdCoolingModels());
+					icon.setImage(plotWdCoolingModels());
+					label.repaint();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -148,7 +151,8 @@ public class PlotWdCoolingModels {
 					massLabel.setText("WD mass: ("+String.format("%4.2f", mass)+"):");
 				}
 				try {
-					ipanel.setImage(plotWdCoolingModels());
+					icon.setImage(plotWdCoolingModels());
+					label.repaint();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -183,7 +187,7 @@ public class PlotWdCoolingModels {
                     JFrame tester = new JFrame();
                     tester.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     tester.setLayout(new BorderLayout());
-                    tester.add(ipanel, BorderLayout.CENTER);
+                    tester.add(label, BorderLayout.CENTER);
                     tester.add(buttonPanel, BorderLayout.SOUTH);
                     tester.pack();
                     tester.setVisible(true);
@@ -221,7 +225,7 @@ public class PlotWdCoolingModels {
 			double tCool = minTcool + d*stepTcool;
 			
 			// Get the bolometric magnitude
-			double mag = wdCoolingModelGrid.mag(tCool, mass);
+			double mag = wdCoolingModelGrid.quantity(tCool, mass);
 			
 			dataInterp[d][0] = tCool;
 			dataInterp[d][1] = mag;
@@ -231,7 +235,7 @@ public class PlotWdCoolingModels {
 		int nTracks = wdCoolingModelSet.getMassGridPoints(atm).length;
 		double[][][] dataRaw = new double[nTracks][][];
 		
-		NavigableMap<Double, MonotonicLinear> tracks = wdCoolingModelGrid.mbolAsFnTcoolByMass;
+		NavigableMap<Double, MonotonicLinear> tracks = wdCoolingModelGrid.quantityAsFnTcoolByMass;
 		
 		// Loop over mass of each internal cooling track
 		int trackIdx = 0;

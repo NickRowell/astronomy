@@ -1,4 +1,4 @@
-package projects.gaia.shproj_2019_2020.dm;
+package projects.gaia.shp.dm;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;

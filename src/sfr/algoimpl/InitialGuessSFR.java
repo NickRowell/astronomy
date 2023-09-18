@@ -43,8 +43,8 @@ public class InitialGuessSFR extends BaseDiscreteSfr {
      */
     public InitialGuessSFR(double t_min, double t_max, int N, double init_SFR) {
     	super(t_min, t_max);
-    	this.N = 100;
-    	this.init_SFR = 1.5E-12;
+    	this.N = N;
+    	this.init_SFR = init_SFR;
         setLookbackTimeBins();
     }
     
@@ -52,7 +52,7 @@ public class InitialGuessSFR extends BaseDiscreteSfr {
      * {@inheritDoc}
      */
 	@Override
-	public BaseSfr copy() {
+	public InitialGuessSFR copy() {
 		InitialGuessSFR copy = new InitialGuessSFR(this.t_min, this.t_max, this.N, this.init_SFR);
 		copy.data = new DiscreteFunction1D(data);
 		return copy;
@@ -115,4 +115,13 @@ public class InitialGuessSFR extends BaseDiscreteSfr {
         return out.toString();
     }
     
+	@Override
+	public double[] getParams() {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
+
+	@Override
+	public void setParams(double[] params) {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
 }

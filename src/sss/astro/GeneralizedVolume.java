@@ -2,6 +2,7 @@ package Field;
 
 import java.io.*;
 import flanagan.interpolation.CubicSpline;
+import sss.field.Footprint;
 
 /**
  *

@@ -1,4 +1,4 @@
-package Calibration;
+package sss.astro;
 
 import Jama.*;
 import java.util.Random;

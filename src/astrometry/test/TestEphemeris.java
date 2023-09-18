@@ -4,10 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import astrometry.Ephemeris;
-import infra.gui.IPanel;
 import infra.io.Gnuplot;
 import infra.os.OSChecker;
 
@@ -46,7 +47,9 @@ public class TestEphemeris {
 		
 		BufferedImage plot = Gnuplot.executeScript(script);
 		
-		final IPanel ipanel = new IPanel(plot);
+		JLabel label = new JLabel("");
+		ImageIcon icon = new ImageIcon(plot);
+		label.setIcon(icon);
 		
 		// Create and display the form
         java.awt.EventQueue.invokeLater(
@@ -58,7 +61,7 @@ public class TestEphemeris {
                             JFrame tester = new JFrame();
                             tester.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                             tester.setLayout(new BorderLayout());
-                            tester.add(ipanel, BorderLayout.CENTER);
+                            tester.add(label, BorderLayout.CENTER);
                             tester.pack();
                             tester.setVisible(true);
                         }

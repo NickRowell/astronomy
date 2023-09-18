@@ -3,6 +3,7 @@ package sss.field;
 
 import java.io.*;
 
+import sdss.footprint.SdssFootprintUtils;
 import sss.field.drillfractions.DrillFraction;
 
 /**

@@ -1,4 +1,4 @@
-package projects.gaia.shproj_2019_2020;
+package projects.gaia.shp;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
@@ -33,8 +33,8 @@ import numeric.stats.StatUtil;
 import photometry.util.PhotometryUtils;
 import projections.Aitoff;
 import projections.util.ProjectionUtil;
-import projects.gaia.shproj_2019_2020.dm.GaiaSource;
-import projects.gaia.shproj_2019_2020.util.GaiaSourceUtil;
+import projects.gaia.shp.dm.GaiaSource;
+import projects.gaia.shp.util.GaiaSourceUtil;
 import util.ArrayUtil;
 import utils.PlotUtil;
 
@@ -85,8 +85,8 @@ public class SeniorHonoursProject_2019_2020 {
 	/**
 	 * BP-RP binning parameters
 	 */
-	static double bprp_min = 0.0;
-	static double bprp_max = 4.0;
+	static double bprp_min = -0.5;
+	static double bprp_max = 2.0;
 	
 	/**
 	 * Magnitude bin step size for CONSTANT_BPRP_STEP
@@ -120,16 +120,14 @@ public class SeniorHonoursProject_2019_2020 {
 	private static final int pt_W = 9;
 	
 	/**
-	 * Lower limit on BP-RP colour to use in the determination of LSR motion etc. This marks the point brighter than
-	 * which there is no correlation between the colour and the average age of main sequence stars.
+	 * Lower limit on BP-RP colour to use in the determination of LSR motion etc.
 	 */
-	static double bprp_ageCorrelation_min = 2.0;
+	static double bprp_ageCorrelation_min = -0.5;
 	
 	/**
-	 * Upper limit on BP-RP colour to use in the determination of LSR motion etc. Points fainter than this are judged
-	 * to be too noisy to include.
+	 * Upper limit on BP-RP colour to use in the determination of LSR motion etc.
 	 */
-	static double bprp_ageCorrelation_max = 4.0;
+	static double bprp_ageCorrelation_max = 1.5;
 	
 	/**
 	 * Threshold on astrometric excess noise [mas]
@@ -150,51 +148,38 @@ public class SeniorHonoursProject_2019_2020 {
 		// Compute various derived astrometric quantities for each star
 		Collection<ExtendedGaiaSource> allStars = computePandA(rawSample);
 		
-		// XXX
-		System.exit(0);
-		
 		// Apply quality criteria, distance and tangential velocity cuts
 		Collection<ExtendedGaiaSource> cleanStars = applyInitialSelections(allStars);
 		
 		// Display HR diagram
 		displayHrDiagram(cleanStars);
 		
-		// Apply WD selection in HRD
-		Collection<ExtendedGaiaSource> wds = selectWds(cleanStars);
+		// Apply MS selection in HRD
+		Collection<ExtendedGaiaSource> ms = selectMs(cleanStars);
 		
-		logger.info("Got " + wds.size() + " WDs.");
+		displayHrDiagram(ms);
+		
+		logger.info("Got " + ms.size() + " MS stars.");
 		
 		// Bin according to BP-RP
-		// TODO - switch binning from G to BP-RP
-		RangeMap<ExtendedGaiaSource> magBinnedWds = binByAbsG(wds);
+		RangeMap<ExtendedGaiaSource> binnedStars = binByBpRp(ms);
 		
-		logger.info("Got " + magBinnedWds.numberOfObjects() + " binned WDs for analysis.");
+		logger.info("Got " + binnedStars.numberOfObjects() + " binned MS stars for analysis.");
 		
 		// Display the stars projected on the sky
-		displaySkyMap(magBinnedWds);
+//		displaySkyMap(binnedStars);
 		
 		// Plot and display distributions of various statistics for selected stars, for quality checking
-		List<Double> distances = new LinkedList<>();
-		for(int bin=0; bin<magBinnedWds.size(); bin++) {
-			for(ExtendedGaiaSource star : magBinnedWds.get(bin)) {
-				distances.add(star.d);
-			}
-		}
-		Gnuplot.displayImage(PlotUtil.plotHistogram(ArrayUtil.toArray(distances), 0, 500, 10, true, "Distance", "pc", 640, 480));
-		
-		// Plot the colour distribution for each magnitude bin
-		for(int bin=0; bin<magBinnedWds.size(); bin++) {
-			
-			double mag = magBinnedWds.getRange(bin).mid();
-			
-			BufferedImage plot = PlotUtil.plotCdf(magBinnedWds.get(bin), (a) -> a.phot_bp_mean_mag - a.phot_rp_mean_mag, 
-					-0.5, 2.0, 0.05, true, false, "G_{BP} - G_{RP}", "mag", 640, 480);
-			
-			ImageIO.write(plot, "png", new File(outputDir, "figures/cdf/"+String.format("%.5f.png", mag)));
-		}
+//		List<Double> distances = new LinkedList<>();
+//		for(int bin=0; bin<binnedStars.size(); bin++) {
+//			for(ExtendedGaiaSource star : binnedStars.get(bin)) {
+//				distances.add(star.d);
+//			}
+//		}
+//		Gnuplot.displayImage(PlotUtil.plotHistogram(ArrayUtil.toArray(distances), 0, 500, 10, true, "Distance", "pc", 640, 480));
 		
 		// Now compute the various quantities for the proper motion deprojection
-		int n = magBinnedWds.size();
+		int n = binnedStars.size();
 		
 		// Mean 3D velocity (3x1) relative to the Sun, and the covariance matrix (symmetric 3x3) on that.
 		Matrix[][] meanVelocities = new Matrix[n][2];
@@ -207,7 +192,7 @@ public class SeniorHonoursProject_2019_2020 {
 		
 		for(int i=0; i<n; i++) {
 			
-			Collection<ExtendedGaiaSource> stars = magBinnedWds.get(i);
+			Collection<ExtendedGaiaSource> stars = binnedStars.get(i);
 			
 			Matrix[] meanVelocity = ProperMotionDeprojection.computeMeanVelocity(stars);
 			
@@ -226,17 +211,17 @@ public class SeniorHonoursProject_2019_2020 {
 		// Extract the datapoints
 		int nPoints = 0;
 		
-		for(int i=0; i<magBinnedWds.size(); i++) {
+		for(int i=0; i<binnedStars.size(); i++) {
 			
-			double mag = magBinnedWds.getRange(i).mid();
+			double bpRp = binnedStars.getRange(i).mid();
 			
-			// Skip ranges of G that don't show age/G correlation
-			if(mag < bprp_ageCorrelation_min || mag > bprp_ageCorrelation_max) {
+			// Skip ranges of BP-RP that don't show age/G correlation
+			if(bpRp < bprp_ageCorrelation_min || bpRp > bprp_ageCorrelation_max) {
 				continue;
 			}
 			
 			// Skip ranges with too few stars
-			if(magBinnedWds.get(i).size() < 2 || velocityDisp[i][0] == Double.NaN) {
+			if(binnedStars.get(i).size() < 2 || velocityDisp[i][0] == Double.NaN) {
 				continue;
 			}
 			
@@ -249,20 +234,19 @@ public class SeniorHonoursProject_2019_2020 {
 			double[] y = new double[nPoints];
 			double[] yerrs = new double[nPoints];
 			int idx = 0;
-			for(int i=0; i<magBinnedWds.size(); i++) {
+			for(int i=0; i<binnedStars.size(); i++) {
 				
-				double mag = magBinnedWds.getRange(i).mid();
+				double bpRp = binnedStars.getRange(i).mid();
 				
 				// Skip ranges of G that don't show age/G correlation
-				if(mag < bprp_ageCorrelation_min || mag > bprp_ageCorrelation_max) {
+				if(bpRp < bprp_ageCorrelation_min || bpRp > bprp_ageCorrelation_max) {
 					continue;
 				}
 
 				// Skip ranges with too few stars
-				if(magBinnedWds.get(i).size() < 2 || velocityDisp[i][0] == Double.NaN) {
+				if(binnedStars.get(i).size() < 2 || velocityDisp[i][0] == Double.NaN) {
 					continue;
 				}
-				
 				
 				x[idx] = velocityDisp[i][0];
 				y[idx] = -meanVelocities[i][0].get(comp, 0);
@@ -275,22 +259,22 @@ public class SeniorHonoursProject_2019_2020 {
 		}
 		
 		// Print a Latex formatted table presenting the data for each magnitude bin
-		printDataTable(magBinnedWds, meanVelocities, velocityDispTensor);
+//		printDataTable(binnedStars, meanVelocities, velocityDispTensor);
 		
-		// Plot the mean velocities and velocity dispersion as a function of absolute G magnitude
-		plotMeanVelocities(magBinnedWds.getRanges(), meanVelocities, velocityDisp);
+		// Plot the mean velocities and velocity dispersion as a function of BP-RP colour
+		plotMeanVelocities(binnedStars.getRanges(), meanVelocities, velocityDisp);
 		
 		// Plot the mean velocity as a function of velocity dispersion for LSR motion
-		plotVelocityVsS2(magBinnedWds, meanVelocities, velocityDisp, polys);
+		plotVelocityVsS2(binnedStars, meanVelocities, velocityDisp, polys);
 
-		// Plot of the velocity dispersion as a function of magnitude
-		plotVelocityDispersion(magBinnedWds.getRanges(), velocityDispTensor);
+		// Plot of the velocity dispersion as a function of BP-RP colour
+		plotVelocityDispersion(binnedStars.getRanges(), velocityDispTensor);
 		
-		// Plot of the vertex deviation as a function of magnitude
-		plotVertexDeviation(magBinnedWds.getRanges(), velocityDispTensor);
+		// Plot of the vertex deviation as a function of BP-RP colour
+		plotVertexDeviation(binnedStars.getRanges(), velocityDispTensor);
 		
-		// Plot of the UV-plane velocity dispersion as a function of G
-		plotVelocityEllipsoidProjections(magBinnedWds.getRanges(), velocityDispTensor);
+		// Plot of the UV-plane velocity dispersion as a function of BP-RP colour
+		plotVelocityEllipsoidProjections(binnedStars.getRanges(), velocityDispTensor);
 	}
 	
 	/**
@@ -422,14 +406,14 @@ public class SeniorHonoursProject_2019_2020 {
 	}
 	
 	/**
-	 * Plots the velocity dispersion diagonal terms as a function of G magnitude.
+	 * Plots the velocity dispersion diagonal terms as a function of BP - RP colour.
 	 * 
-	 * @param magBins
-	 * 	The magnitude bins.
+	 * @param bpRpBins
+	 * 	The BP-RP bins.
 	 * @param velocityDispTensor
 	 * 	The UVW Velocity dispersion tensor for each magnitude bin.
 	 */
-	private static void plotVelocityDispersion(Range[] magBins, Matrix[][] velocityDispTensor) {
+	private static void plotVelocityDispersion(Range[] bpRpBins, Matrix[][] velocityDispTensor) {
 
 		StringBuilder script = new StringBuilder();
 		script.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
@@ -449,7 +433,7 @@ public class SeniorHonoursProject_2019_2020 {
 		script.append("set ytics out").append(OSChecker.newline);
 		script.append("set mxtics 2").append(OSChecker.newline);
 		script.append("set mytics 2").append(OSChecker.newline);
-		script.append("set xlabel 'M_{G}'").append(OSChecker.newline);
+		script.append("set xlabel 'BP - RP [mag]'").append(OSChecker.newline);
 		script.append("set ylabel 'km s^{-1}'").append(OSChecker.newline);
 		script.append("plot '-' u 1:2 w l ls 1 notitle,");
 		script.append("     '-' u 1:2 w l ls 2 notitle,");
@@ -459,31 +443,31 @@ public class SeniorHonoursProject_2019_2020 {
 		script.append("     '-' u 1:2:3:4 w yerrorbars ls 3 title 'σ_W'").append(OSChecker.newline);
 		
 		
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
-			script.append(magBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(0, 0))).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(0, 0))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
-			script.append(magBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(3, 0))).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(3, 0))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
-			script.append(magBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(5, 0))).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + Math.sqrt(velocityDispTensor[i][0].get(5, 0))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
@@ -513,11 +497,11 @@ public class SeniorHonoursProject_2019_2020 {
 			double lower = confLims[0];
 			double upper = confLims[1];
 			
-			script.append(magBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
@@ -546,11 +530,11 @@ public class SeniorHonoursProject_2019_2020 {
 			double lower = confLims[0];
 			double upper = confLims[1];
 			
-			script.append(magBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			if(velocityDispTensor[i][0]==null) {
 				continue;
 			}
@@ -579,7 +563,7 @@ public class SeniorHonoursProject_2019_2020 {
 			double lower = confLims[0];
 			double upper = confLims[1];
 			
-			script.append(magBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
@@ -592,14 +576,14 @@ public class SeniorHonoursProject_2019_2020 {
 	}
 	
 	/**
-	 * Plots the vertex deviation as a function of G magnitude.
+	 * Plots the vertex deviation as a function of BP - RP colour.
 	 * 
-	 * @param magBins
-	 * 	The magnitude bins.
+	 * @param bpRpBins
+	 * 	The BP - RP bins.
 	 * @param velocityDispTensor
 	 * 	The UVW Velocity dispersion tensor for each magnitude bin.
 	 */
-	private static void plotVertexDeviation(Range[] magBins, Matrix[][] velocityDispTensor) {
+	private static void plotVertexDeviation(Range[] bpRpBins, Matrix[][] velocityDispTensor) {
 
 		StringBuilder script = new StringBuilder();
 		script.append("set terminal pngcairo enhanced dashed color size 640,640").append(OSChecker.newline);
@@ -658,14 +642,14 @@ public class SeniorHonoursProject_2019_2020 {
 				script.append("set ytics 20 out").append(OSChecker.newline);
 				script.append("set mytics 2").append(OSChecker.newline);
 				
-				script.append("set label 'M_G' at screen 0.45,screen 0.05").append(OSChecker.newline);
+				script.append("set label 'BP - RP [mag]' at screen 0.45,screen 0.05").append(OSChecker.newline);
 			}
 			
 			script.append("plot '-' u 1:2 w l ls "+(comp+1)+" notitle,");
 			script.append("     '-' u 1:2:3:4 w yerrorbars ls "+(comp+1)+" notitle").append(OSChecker.newline);
 			
 			for(int t=0; t<2; t++) {
-				for(int i=0; i<magBins.length; i++) {
+				for(int i=0; i<bpRpBins.length; i++) {
 					if(velocityDispTensor[i][0]==null) {
 						continue;
 					}
@@ -707,7 +691,7 @@ public class SeniorHonoursProject_2019_2020 {
 					double l_01 = Math.toDegrees(0.5 * Math.atan2(2*sig_01, sig2_00 - sig2_11));
 					
 					if(t==0) {
-						script.append(magBins[i].mid() + " " + l_01).append(OSChecker.newline);
+						script.append(bpRpBins[i].mid() + " " + l_01).append(OSChecker.newline);
 					}
 					else {
 						// One sigma confidence boundaries
@@ -733,7 +717,7 @@ public class SeniorHonoursProject_2019_2020 {
 						double lower = confLims[0];
 						double upper = confLims[1];
 						
-						script.append(magBins[i].mid() + " " + l_01 + " " + lower + " " + upper).append(OSChecker.newline);
+						script.append(bpRpBins[i].mid() + " " + l_01 + " " + lower + " " + upper).append(OSChecker.newline);
 					}
 				}
 				script.append("e").append(OSChecker.newline);
@@ -749,14 +733,14 @@ public class SeniorHonoursProject_2019_2020 {
 	}
 	
 	/**
-	 * Plots the velocity dispersion ellipse in the UV plane as a function of G magnitude.
+	 * Plots the velocity dispersion ellipse in the UV plane as a function of BP - RP colour.
 	 * 
-	 * @param magBins
-	 * 	The magnitude bins.
+	 * @param bpRpBins
+	 * 	The BP - RP bins.
 	 * @param velocityDispTensor
 	 * 	The UVW Velocity dispersion tensor for each magnitude bin.
 	 */
-	private static void plotVelocityEllipsoidProjections(Range[] magBins, Matrix[][] velocityDispTensor) {
+	private static void plotVelocityEllipsoidProjections(Range[] bpRpBins, Matrix[][] velocityDispTensor) {
 		
 		double[] rangesUVW = new double[]{50.0, 50.0, 35.0};
 		String[][] labels = new String[][]{{"U","V"},{"U","W"},{"V","W"}};
@@ -776,7 +760,7 @@ public class SeniorHonoursProject_2019_2020 {
 			script.append("set grid xtics mxtics ytics mytics back ls 20, ls 21").append(OSChecker.newline);
 			
 			script.append("set cbrange ["+bprp_min+":"+bprp_max+"]").append(OSChecker.newline);
-			script.append("set cblabel 'M_G'").append(OSChecker.newline);
+			script.append("set cblabel 'BP - RP [mag]'").append(OSChecker.newline);
 			
 			script.append("set xlabel '"+labels[k][0]+" [km s^{-1}]'").append(OSChecker.newline);
 			script.append("set xrange ["+(-rangesUVW[k])+":"+rangesUVW[k]+"]").append(OSChecker.newline);
@@ -790,7 +774,7 @@ public class SeniorHonoursProject_2019_2020 {
 			
 			script.append("plot '-' u 1:2:3 w l ls 1 notitle");
 			
-			for(int i=0; i<magBins.length; i++) {
+			for(int i=0; i<bpRpBins.length; i++) {
 				if(velocityDispTensor[i][0] != null) {
 					script.append(", '-' u 1:2:3 w l ls 1 notitle");
 				}
@@ -799,11 +783,11 @@ public class SeniorHonoursProject_2019_2020 {
 			
 			int nPoints = 100;
 			
-			for(int i=0; i<magBins.length; i++) {
+			for(int i=0; i<bpRpBins.length; i++) {
 				if(velocityDispTensor[i][0] == null) {
 					continue;
 				}
-				double mag = magBins[i].mid();
+				double mag = bpRpBins[i].mid();
 				
 				double sig2_U = velocityDispTensor[i][0].get(0, 0);
 				double sig_UV = velocityDispTensor[i][0].get(1, 0);
@@ -981,14 +965,14 @@ public class SeniorHonoursProject_2019_2020 {
 
 	/**
 	 * Plots the components of the mean velocity and velocity dispersion as a function of absolute magnitude.
-	 * @param magBins
-	 * 	The magnitude bins.
+	 * @param bpRpBins
+	 * 	The BP-RP bins bins.
 	 * @param meanVelocities
 	 * 	Mean velocity in each magnitude bin.
 	 * @param velocityDisp
 	 * 	Velocity dispersion in each magnitude bin.
 	 */
-	private static void plotMeanVelocities(Range[] magBins, Matrix[][] meanVelocities, double[][] velocityDisp) {
+	private static void plotMeanVelocities(Range[] bpRpBins, Matrix[][] meanVelocities, double[][] velocityDisp) {
 		
 		StringBuilder script = new StringBuilder();
 		script.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
@@ -1010,7 +994,7 @@ public class SeniorHonoursProject_2019_2020 {
 		script.append("set mxtics 2").append(OSChecker.newline);
 		script.append("set mytics 2").append(OSChecker.newline);
 		
-		script.append("set xlabel 'M_G'").append(OSChecker.newline);
+		script.append("set xlabel 'BP - RP [mag]'").append(OSChecker.newline);
 		script.append("set ylabel 'km s^{-1}'").append(OSChecker.newline);
 		script.append("plot '-' u 1:(-$2) w l ls 1 notitle,");
 		script.append("     '-' u 1:(-$2) w l ls 2 notitle,");
@@ -1020,41 +1004,41 @@ public class SeniorHonoursProject_2019_2020 {
 		script.append("     '-' u 1:(-$2):3 w yerrorbars ls 3 title 'W',");
 		script.append("     '-' u 1:2:3:4 w yerrorbars ls 4 title 'S'").append(OSChecker.newline);
 		
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(0, 0)).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(0, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(1, 0)).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(1, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(2, 0)).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(2, 0)).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
 		
 		// Errors
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(0, 0) + " " + Math.sqrt(meanVelocities[i][1].get(0, 0))).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(0, 0) + " " + Math.sqrt(meanVelocities[i][1].get(0, 0))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(1, 0) + " " + Math.sqrt(meanVelocities[i][1].get(1, 1))).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(1, 0) + " " + Math.sqrt(meanVelocities[i][1].get(1, 1))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 
-		for(int i=0; i<magBins.length; i++) {
-			script.append(magBins[i].mid() + " " + meanVelocities[i][0].get(2, 0) + " " + Math.sqrt(meanVelocities[i][1].get(2, 2))).append(OSChecker.newline);
+		for(int i=0; i<bpRpBins.length; i++) {
+			script.append(bpRpBins[i].mid() + " " + meanVelocities[i][0].get(2, 0) + " " + Math.sqrt(meanVelocities[i][1].get(2, 2))).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
 		
 		// Velocity dispersion
-		for(int i=0; i<magBins.length; i++) {
+		for(int i=0; i<bpRpBins.length; i++) {
 			
 			double s2 = velocityDisp[i][0];
 			double s = Math.sqrt(s2);
@@ -1084,7 +1068,7 @@ public class SeniorHonoursProject_2019_2020 {
 			double lower = confLims[0];
 			double upper = confLims[1];
 			
-			script.append(magBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
+			script.append(bpRpBins[i].mid() + " " + s + " " + lower + " " + upper).append(OSChecker.newline);
 		}
 		script.append("e").append(OSChecker.newline);
 		
@@ -1197,6 +1181,50 @@ public class SeniorHonoursProject_2019_2020 {
 		return wds;
 	}
 	
+	private static Collection<ExtendedGaiaSource> selectMs(Collection<ExtendedGaiaSource> allStars) {
+		
+		// Count number of stars that fail each threshold
+		int[] count = new int[1];
+		
+		List<ExtendedGaiaSource> ms = new LinkedList<>();
+		
+		for(ExtendedGaiaSource star : allStars) {
+			
+			// Absolute G magnitude
+			double gMag = PhotometryUtils.getAbsoluteMagnitudeFromPi(star.parallax/1000.0, star.phot_g_mean_mag);
+			
+			// BP-RP colour index
+			double bpRp = star.phot_bp_mean_mag - star.phot_rp_mean_mag;
+			
+			// Apply quality criteria
+			boolean reject = false;
+			
+			// TODO Rough selection in HRD
+			double fiducial = (14/4.5) * bpRp + (3 + 0.5 * (14/4.5));
+			
+			if(gMag > fiducial) {
+				count[0]++;
+				reject = true;
+			}
+			
+			if(!reject) {
+				ms.add(star);
+			}
+		}
+
+		logger.info("Retained "+ms.size()+" MS stars for analysis");
+		logger.info("Failed HRD selection:      " + count[0]);
+		
+		return ms;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * Apply WD selection in the HRD and bin resulting WDs by magnitude.
 	 * 
@@ -1289,6 +1317,119 @@ public class SeniorHonoursProject_2019_2020 {
 		
 		return magBinnedWds;
 	}
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * TODO: define a function that returns the quantity to bin stars on. Then that makes binning by e.g. magnitude
+	 * or colour very easy.
+	 * 
+	 * @param ms
+	 * @return
+	 */
+	private static RangeMap<ExtendedGaiaSource> binByBpRp(Collection<ExtendedGaiaSource> ms) {
+		
+		
+		RangeMap<ExtendedGaiaSource> binnedStars;
+		
+		if(binScheme == BIN_SCHEME.CONSTANT_BPRP_STEP) {
+			// Map the stars by magnitude
+			binnedStars = new RangeMap<>(bprp_min, bprp_max, bprp_step);
+		}
+		else if(binScheme == BIN_SCHEME.CONSTANT_STARS) {
+			
+			// Read the BP-RP colours into a sorted list
+			List<Double> bpRps = new LinkedList<>();
+			for(ExtendedGaiaSource star : ms) {
+				
+				// Absolute G magnitude
+//				double gMag = PhotometryUtils.getAbsoluteMagnitudeFromPi(star.parallax/1000.0, star.phot_g_mean_mag);
+
+				// BP-RP colour index
+				double bpRp = star.phot_bp_mean_mag - star.phot_rp_mean_mag;
+				
+				if(bpRp >= bprp_min && bpRp <= bprp_max) {
+					bpRps.add(bpRp);
+				}
+			}
+			
+			Collections.sort(bpRps);
+			
+			// Find the bin edges
+			List<Double> binEdges = new LinkedList<>();
+			
+			// Lower edge of first bin
+			binEdges.add(bpRps.get(0));
+			
+			for(int bin=1; ; bin++) {
+				
+				// Index of star that lies at upper boundary of the bin
+				int upperIdx = nStarsPerBin*bin - 1;
+				
+				if(upperIdx > bpRps.size() - 1) {
+					// Final bin and there are fewer than nStarsPerBin in it; merge it with the previous bin.
+					// Remove upper edge of previous bin
+					binEdges.remove(binEdges.size() - 1);
+					// Add upper edge of final bin (the magnitude of the faintest star)
+					double binEdge = bpRps.get(bpRps.size() - 1);
+					binEdges.add(binEdge);
+					break;
+				}
+				else if(upperIdx == bpRps.size() - 1) {
+					// Final bin and there's nStarsPerBin in it; don't merge it with previous bin.
+					double binEdge = bpRps.get(upperIdx);
+					binEdges.add(binEdge);
+					break;
+				}
+				else {
+					// Not yet reached the final bin; place bin edge at midpoint between two stars
+					double binEdge = (bpRps.get(upperIdx) + bpRps.get(upperIdx + 1)) / 2.0f;
+					binEdges.add(binEdge);
+				}
+			}
+			
+			// Convert bin edges list to arrays of bin centres and widths
+			double[] binCentres = new double[binEdges.size()-1];
+			double[] binWidths = new double[binEdges.size()-1];
+			
+			for(int bin = 0; bin < binEdges.size()-1; bin++) {
+				
+				// Bin lower edge & upper edge
+				double lower = binEdges.get(bin);
+				double upper = binEdges.get(bin+1);
+				
+				binCentres[bin] = (lower + upper) / 2.0;
+				binWidths[bin] = (upper - lower);
+			}
+			binnedStars = new RangeMap<>(binCentres, binWidths);
+		}
+		else {
+			throw new RuntimeException("Unsupported bin scheme: " + binScheme);
+		}
+		
+		for(ExtendedGaiaSource star : ms) {
+			// Absolute G magnitude
+//			double gMag = PhotometryUtils.getAbsoluteMagnitudeFromPi(star.parallax/1000.0, star.phot_g_mean_mag);
+			
+			// BP-RP colour index
+			double bpRp = star.phot_bp_mean_mag - star.phot_rp_mean_mag;
+			
+			binnedStars.add(bpRp, star);
+		}
+		
+		return binnedStars;
+	}
+	
+	
+	
+	
+	
+	
+	
 	
 	
 	

@@ -72,5 +72,15 @@ public class FreeformSFR extends BaseDiscreteSfr {
     public String getName() {
     	return "Freeform";
     }
+
+	@Override
+	public double[] getParams() {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
+
+	@Override
+	public void setParams(double[] params) {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
     
 }

@@ -25,6 +25,7 @@ package kinematics.util;
 
 import java.util.Collection;
 
+
 import Jama.Matrix;
 import kinematics.dm.AstrometricStar;
 
@@ -74,18 +75,33 @@ public final class ProperMotionDeprojection {
 		meanA.timesEquals(1.0/n);
 		
 		// Solve for the mean Solar motion
-		Matrix meanV = meanA.solve(meanP);
-		
-		// Compute the error on the mean velocity
-		double meanPprimeSquared = 0.0;
-		for(AstrometricStar star : stars) {
-			Matrix pPrime = star.getP().minus(star.getA().times(meanV));
-			star.setPPrime(pPrime);
-			meanPprimeSquared += pPrime.normF()*pPrime.normF();
+		Matrix meanV = null;
+		Matrix var_meanV = null;
+		try {
+			
+			// Investigating what numpy dot function does if incorrectly used to multiply invA and meanP
+//			Matrix invA = meanA.inverse();
+//			double u = invA.get(0, 2) * meanP.get(0, 0);
+//			double v = invA.get(1, 2) * meanP.get(1, 0);
+//			double w = invA.get(2, 2) * meanP.get(2, 0);
+//			meanV = new Matrix(new double[][] {{u}, {v}, {w}});
+			
+			meanV = meanA.solve(meanP);
+			
+			// Compute the error on the mean velocity
+			double meanPprimeSquared = 0.0;
+			for(AstrometricStar star : stars) {
+				Matrix pPrime = star.getP().minus(star.getA().times(meanV));
+				star.setPPrime(pPrime);
+				meanPprimeSquared += pPrime.normF()*pPrime.normF();
+			}
+			meanPprimeSquared /= n;
+			var_meanV = meanA.inverse().times(meanPprimeSquared/n);
 		}
-		meanPprimeSquared /= n;
-		Matrix var_meanV = meanA.inverse().times(meanPprimeSquared/n);
-
+		catch(RuntimeException e) {
+			// Singular matrix - leave results null
+		}
+		
 		return new Matrix[]{meanV, var_meanV};
 	}
 	

@@ -3,7 +3,7 @@
  * a certain value, according to the kinematic model chosen.
  *
  */
-package Kinematics;
+package sss.astro;
 
 import java.io.*;
 

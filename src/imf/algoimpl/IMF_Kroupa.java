@@ -17,7 +17,7 @@ public class IMF_Kroupa extends BaseImf
     /**
      * Normalisation constant for Kroupa IMF.
      */
-    private double A = 1.4330809;    
+    private double A = 1.4330809;
     
     /**
      * Basic constructor.
@@ -30,7 +30,6 @@ public class IMF_Kroupa extends BaseImf
     @Override
     public double getIMF(double M) 
     {
-//        assert (M >= M_lower) && (M <= M_upper);
         return Math.pow(M, -2.3) / A;
     }
 
@@ -51,8 +50,8 @@ public class IMF_Kroupa extends BaseImf
     public double drawMass() 
     {
         double x = Math.random();
-        return Math.exp(Math.log(x * A * (-1.3)
-                + Math.pow(M_lower, -1.3)) / -1.3);
+        
+        return Math.exp(Math.log(x * A * (-1.3) + Math.pow(M_lower, -1.3)) / -1.3);
     }
     
     /**

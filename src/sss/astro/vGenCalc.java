@@ -18,12 +18,13 @@ This has applications in luminosity function and scaleheight function measuremen
 */
 
 
-package Field;
+package sss.astro;
 
 import Constants.*;
 import java.io.*;
 import java.text.DecimalFormat;
 import Jama.*;
+import sss.field.Footprint;
 
 /**
  *

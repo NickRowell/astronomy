@@ -80,7 +80,7 @@ public class ConstantSFR extends BaseSfr {
      */
 	@Override
 	public double drawCreationTime() {
-		return t_min + (t_max - t_min) * rng.nextDouble();
+		return t_min + (t_max - t_min) * random.nextDouble();
 	}
 
     /**

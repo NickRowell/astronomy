@@ -13,10 +13,15 @@ import imf.algo.BaseImf;
 public class IMF_PowerLaw extends BaseImf
 {
 
+	/**
+	 * Fixed seed to use for random number generation, in order to make applications deterministic.
+	 */
+	public static final long seed = 58315548397523634L;
+	
     /**
      * Instance of {@link Random} used to provide random number generation.
      */
-	private static final Random random = new Random(System.currentTimeMillis());
+	private static final Random random = new Random(seed);
 	
     /**
      * Power law exponent.
@@ -73,7 +78,6 @@ public class IMF_PowerLaw extends BaseImf
      */
     @Override
     public double getIMF(double M) {
-        //assert (M>=M_lower)&&(M<=M_upper);
         if(!((M>=M_lower)&&(M<=M_upper)))
             throw new RuntimeException("getIMF() error: Mass = "+M);
         

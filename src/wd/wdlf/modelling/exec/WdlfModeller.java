@@ -1,33 +1,31 @@
 
 package wd.wdlf.modelling.exec;
 
-
-import infra.gui.IPanel;
-import infra.io.Gnuplot;
-import infra.os.OSChecker;
-
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JTabbedPane;
 
-import sfr.gui.SfrPanel;
+import infra.io.Gnuplot;
+import infra.os.OSChecker;
+import sfr.gui.SfrForm;
 import wd.wdlf.algoimpl.ModelWDLF;
 import wd.wdlf.infra.EntryFormResult;
 import wd.wdlf.infra.ModellingParametersForm;
@@ -82,9 +80,9 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
     ModellingState modellingState;
     
     /**
-     * GUI frontend to the star formation rate parameter.
+     * GUI frontend to the star formation rate function.
      */
-    SfrPanel sfrPanel;
+    SfrForm sfrForm;
     
     /**
      * GUI frontend to various input physics parameters.
@@ -101,10 +99,9 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
      */
     WDLFBinsForm wdlfBinsForm;
     
-    
-    IPanel luminosityFunctionPanel = new IPanel();
-    IPanel ageLuminosityRelationPanel = new IPanel();
-    IPanel massLuminosityRelationPanel = new IPanel();
+    JLabel luminosityFunctionPanel = new JLabel(new ImageIcon());
+    JLabel ageLuminosityRelationPanel = new JLabel(new ImageIcon());
+    JLabel massLuminosityRelationPanel = new JLabel(new ImageIcon());
     JProgressBar progressBar = new JProgressBar(0, 100);
     
     /** 
@@ -137,7 +134,6 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
             System.exit(1);
         }
         
-        
     	modellingState = new ModellingState();
     	
         // Get default working directory from location that application was launched from
@@ -147,13 +143,7 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
         setTitle("Simulated WDLF Generator "+version);
         setLayout(new BorderLayout());
         
-        // Contains GUI elements related to the star formation rate
-        sfrPanel = new SfrPanel();
-        add(sfrPanel, BorderLayout.NORTH);
-        
-        // Contains GUI elements relating to
-        JPanel wdlfPanel = new JPanel();
-        
+        sfrForm = new SfrForm(modellingState);
         modellingParametersForm = new ModellingParametersForm(modellingState);
         surveyTypeForm = new SurveyTypeForm(modellingState);
         wdlfBinsForm = new WDLFBinsForm(modellingState);
@@ -228,18 +218,17 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
         panel1.add(progressBar, c);
             
         // Add two sub-panels to main frame
+        JPanel wdlfPanel = new JPanel();
         wdlfPanel.setLayout(new FlowLayout());
         wdlfPanel.add(panel1);
         wdlfPanel.add(wdlfModelTabbedPane);
         
         add(wdlfPanel, BorderLayout.SOUTH);
+        add(sfrForm, BorderLayout.NORTH);
         
-        
-
         // Calculate initial WDLF based on default parameters before showing the GUI. This allows
         // GUI components to be sized correctly. Note that we must compute this synchronously so that
         // frame is only packed once the simulation is complete.
-     	modellingState.syntheticSFR = sfrPanel.selectedSfrModel.getSfr();
         WDLFSolver solver = new MonteCarloWDLFSolver();
         modellingState.syntheticWDLF = solver.calculateWDLF(modellingState);
         plotWDLF(modellingState.syntheticWDLF);
@@ -292,10 +281,7 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
 		message.append(wdlfBins.message);
         
 		if(valid)
-		{	 
-			// Get the current active SFR instance and assign it the the SFR field of modellingState
-			modellingState.syntheticSFR = sfrPanel.selectedSfrModel.getSfr();
-			
+		{	
 			// Get suitable solver:
 			final WDLFSolver solver = new MonteCarloWDLFSolver();
 			solver.addPropertyChangeListener(this);
@@ -342,32 +328,20 @@ public class WdlfModeller extends JFrame implements PropertyChangeListener
     {
         try
         {
-            // Write Gnuplot script file
-            File script = File.createTempFile("obsWDLF", null, modellingState.outputDirectory);
-            BufferedWriter out = new BufferedWriter(new FileWriter(script));
-            out.write(syntheticWDLF.getLuminosityFunctionGnuplotScript());
-            out.close();
-            luminosityFunctionPanel.plotGnuplot(script);
-            script.delete();
+        	// Plot WDLF
+            BufferedImage wdlfImg = Gnuplot.executeScript(syntheticWDLF.getLuminosityFunctionGnuplotScript());
+            ((ImageIcon)luminosityFunctionPanel.getIcon()).setImage(wdlfImg);
+            luminosityFunctionPanel.repaint();
             
             // Plot age-luminosity relation
-            script = File.createTempFile("obsAgeLuminosity", null, modellingState.outputDirectory);
-            out = new BufferedWriter(new FileWriter(script));
-            out.write(syntheticWDLF.getAgeLuminosityRelationGnuplotScript());
-            out.close();
-            ageLuminosityRelationPanel.plotGnuplot(script);
-            script.delete();
+            BufferedImage ageLumImg = Gnuplot.executeScript(syntheticWDLF.getAgeLuminosityRelationGnuplotScript());
+            ((ImageIcon)ageLuminosityRelationPanel.getIcon()).setImage(ageLumImg);
+            ageLuminosityRelationPanel.repaint();
             
             // Plot mass-luminosity relation
-            script = File.createTempFile("obsMassLuminosity", null, modellingState.outputDirectory);
-            out = new BufferedWriter(new FileWriter(script));
-            out.write(syntheticWDLF.getMassLuminosityRelationGnuplotScript());
-            out.close();
-            massLuminosityRelationPanel.plotGnuplot(script);
-            script.delete();        
-            
-            repaint();
-            
+            BufferedImage massLumImg = Gnuplot.executeScript(syntheticWDLF.getMassLuminosityRelationGnuplotScript());
+            ((ImageIcon)massLuminosityRelationPanel.getIcon()).setImage(massLumImg);
+            massLuminosityRelationPanel.repaint();
         }
         catch(IOException ioe)
         { 

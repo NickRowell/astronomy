@@ -120,7 +120,11 @@ public class SolarNeighbourhoodWds {
 				// 2) Use appropriate WD cooling model set to fit mass of WD in G/BP-RP plane
 				WdMassFitter fitter = new WdMassFitter(wdModels, Filter.G_REV_DR2, Filter.BP_REV_DR2, Filter.RP_REV_DR2, atm);
 				
-				double[] data = new double[]{wd.bmr, wd.m_g};
+				double bmr = wd.phot_bp_mean_mag - wd.phot_rp_mean_mag;
+				
+				// TODO: need to estimate WD absolute G magnitude
+				
+				double[] data = new double[]{bmr, wd.phot_g_mean_mag};
 				double[][] cov = new double[][]{{1.0, 0.0}, {0.0, 1.0}};
 				// Initial guess parameters
 				double initGuessMass = 0.5;
@@ -151,7 +155,7 @@ public class SolarNeighbourhoodWds {
 					wdMasses.add(wdMass);
 					
 					// Write the results to file
-					out.write(wd.m_g + "\t" + wd.bmr + "\t" + wdMass + "\t" + wdCoolingTime + "\n");
+					out.write(wd.m_g + "\t" + bmr + "\t" + wdMass + "\t" + wdCoolingTime + "\n");
 					
 					// Add to the mass distribution
 					int massBin = (int)Math.floor((wdMass - massMin) / massStep);
@@ -255,15 +259,18 @@ public class SolarNeighbourhoodWds {
 			script.append(OSChecker.newline);
 			
 			for(GaiaSource wd : wds) {
-				script.append(wd.bmr + " " + wd.m_g).append(OSChecker.newline);
+
+				double bmr = wd.phot_bp_mean_mag - wd.phot_rp_mean_mag;
+				
+				script.append(bmr + " " + wd.m_g).append(OSChecker.newline);
 			}
 			script.append("e").append(OSChecker.newline);
 			
 			for(int m=0; m<masses.length; m++) {
 				for(double tcool=0; tcool<12e9; tcool += 1e7) {
-					double g = wdModels.mag(tcool, masses[m], atm, Filter.G_REV_DR2);
-					double bp = wdModels.mag(tcool, masses[m], atm, Filter.BP_REV_DR2);
-					double rp = wdModels.mag(tcool, masses[m], atm, Filter.RP_REV_DR2);
+					double g = wdModels.quantity(tcool, masses[m], atm, Filter.G_REV_DR2);
+					double bp = wdModels.quantity(tcool, masses[m], atm, Filter.BP_REV_DR2);
+					double rp = wdModels.quantity(tcool, masses[m], atm, Filter.RP_REV_DR2);
 					script.append((bp - rp) + " " + g).append(OSChecker.newline);
 				}
 				script.append("e").append(OSChecker.newline);

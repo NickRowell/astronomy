@@ -281,10 +281,14 @@ public final class AstrometryUtils
 //		
 //		// Galactic longitude of the ascending node of the Equatorial plane (incorrect quantity to use)
 //		double l_OMEGA = Math.toRadians(32.93192);
+//		
 //		// Galactic longitude of the north celestial pole
 //		double l_NCP = Math.toRadians(122.932);
 //		
 //		l = l_NCP - Math.atan2(sinLoL, cosLoL);
+//		
+//		// Shift l to [0:2PI] range
+//		l = translateToRangeZeroToTwoPi(l);
 //		
 //		// 2) Transform proper motions:
 //		
@@ -294,6 +298,7 @@ public final class AstrometryUtils
 //		
 //		mu_lcosb = (c1 * mu_acosd + c2 * mu_d)/cos_b;
 //		mu_b = (-c2 * mu_acosd + c1 * mu_d)/cos_b;
+//		
 //		return new double[]{l, b, mu_lcosb, mu_b};
 	}
 	
@@ -581,6 +586,10 @@ public final class AstrometryUtils
 	}
 
 	/**
+	 * TODO: longstanding bug in this code for negative angle of less than a degree will get
+	 * flipped to positive angles, due to inability to store the sign of the degrees component
+	 * when it is zero.
+	 * 
 	 * Converts an angle in radians to the equivalent degrees, arcminutes, arcseconds
 	 * representation. The angle can be positive or negative. If it lies outside the
 	 * range [-2*PI : 2*PI] then it is first translated to this range by adding or
@@ -591,13 +600,16 @@ public final class AstrometryUtils
 	 * @return
 	 * 	Array of doubles containing the degrees [0], arcminutes [1] and arcseconds [2]. The
 	 * degrees and arcminutes are whole numbers, the arcseconds have numbers after the decimal place.
+	 * Due to problems representing negative angles of less than one degree the sign is returned in
+	 * the fourth element, which takes the value +/-1.
+	 * 
 	 */
 	public static double[] radiansToDMS(double angle) {
 		
 		angle = translateToRangeMinusTwoPiToTwoPi(angle);
 		angle = Math.toDegrees(angle);
 		
-		double deg, arcmin, arcsec;
+		double deg, arcmin, arcsec, sign;
 		
 		if(angle > 0){
 		    deg = Math.floor(angle);
@@ -605,6 +617,7 @@ public final class AstrometryUtils
 		    arcmin = Math.floor(remainder*60.0);
 		    remainder = remainder*60.0 - arcmin;
 		    arcsec = remainder*60.0;
+		    sign = 1.0;
         }
         else{
             deg = Math.ceil(angle);
@@ -612,9 +625,10 @@ public final class AstrometryUtils
             arcmin = Math.floor(remainder*60);
             remainder = remainder*60 - arcmin;
             arcsec = remainder*60;
+		    sign = -1.0;
         }
 		
-		return new double[]{deg, arcmin, arcsec};
+		return new double[]{deg, arcmin, arcsec, sign};
 	}
 	
 	/**

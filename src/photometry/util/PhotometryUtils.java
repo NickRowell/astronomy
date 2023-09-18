@@ -71,5 +71,19 @@ public class PhotometryUtils
 	{
 		return Solar.mbol - 2.5*logLL0;
 	}
+
+	/**
+	 * Converts a total luminosity from bolometric magnitude to .log(L/L_0)
+	 * 
+	 * @param mbol
+	 * 	The total luminosity expressed as a bolometric magnitude.
+	 * @return
+	 * 	The total luminosity expressed as the logarithm of the luminosity in Solar units.
+	 */
+	public static double mbolToLogLL0(double mbol)
+	{
+		return (Solar.mbol - mbol)/2.5;
+	}
+	
 	
 }

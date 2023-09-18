@@ -6,21 +6,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
+import infra.Quantity;
 import numeric.functions.Linear;
 import util.ParseUtil;
 
 /**
- * Enum represents a photometric filter.
+ * This enum represents magnitudes in particular photometric passbands. It also contains the filter transmission
+ * functions in most cases.
  * 
  * The transmission functions are read from plain text files containing two columns. The
  * first column gives the (increasing) wavelength in Angstroms, the second gives the transmission in the
  * [0:1] range.
  * 
- *
  * @author nrowell
  * @version $Id$
  */
-public enum Filter {
+public enum Filter implements Quantity<Filter> {
 	
 	/** Bolometric magnitude: a special class of filter */
 	M_BOL(null, "M_{bol}"),
@@ -107,17 +108,23 @@ public enum Filter {
 	// Gaia nominal bands
 	
 	/** Nominal Gaia G band */
-	G_NOM_DR2("gaia/G_energy.txt","G"),
+	G_NOM_DR2("gaia/G_energy.txt","G (DR2 nom)"),
 	/** Nominal Gaia BP band */
-	BP_NOM_DR2("gaia/BP_energy.txt","BP"),
+	BP_NOM_DR2("gaia/BP_energy.txt","BP (DR2 nom)"),
 	/** Nominal Gaia RP band */
-	RP_NOM_DR2("gaia/RP_energy.txt","RP"),
+	RP_NOM_DR2("gaia/RP_energy.txt","RP (DR2 nom)"),
 	/** Revised DR2 Gaia G band */
-	G_REV_DR2("gaia/G_energy.txt","G"),
+	G_REV_DR2("gaia/G_energy.txt","G (DR2 rev)"),
 	/** Revised DR2 Gaia BP band */
-	BP_REV_DR2("gaia/BP_energy.txt","BP"),
+	BP_REV_DR2("gaia/BP_energy.txt","BP (DR2 rev)"),
 	/** Revised DR2 Gaia RP band */
-	RP_REV_DR2("gaia/RP_energy.txt","RP")
+	RP_REV_DR2("gaia/RP_energy.txt","RP (DR2 rev)"),
+	/** DR3 Gaia G band */
+	G_DR3(null,"G (DR3)"),
+	/** DR3 Gaia BP band */
+	BP_DR3(null,"BP (DR3)"),
+	/** DR3 Gaia RP band */
+	RP_DR3(null,"RP (DR3)")
 	;
 	
 	/**

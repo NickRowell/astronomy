@@ -105,7 +105,7 @@ public class ExponentialDecaySFR extends BaseSfr {
 	public double drawCreationTime() {
 		
 		// Draw point on cumulative distribution randomly distributed in range 0:integrateSFR()
-		double cdf = rng.nextDouble() * integrateSFR()[0];
+		double cdf = random.nextDouble() * integrateSFR()[0];
 		
 		// Solve for the lookback time at which this point is reached, by inverting the CDF
 		return t_max + lambda*Math.log(cdf/(lambda * r0) + Math.exp((t_min - t_max)/lambda));

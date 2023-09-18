@@ -232,8 +232,8 @@ public class SolarNeighbourhoodWdsGaiaSdss {
 			
 			for(int m=0; m<masses.length; m++) {
 				for(double tcool=0; tcool<12e9; tcool += 1e7) {
-					double u = wdModels.mag(tcool, masses[m], atm, Filter.SDSS_U);
-					double g = wdModels.mag(tcool, masses[m], atm, Filter.SDSS_G);
+					double u = wdModels.quantity(tcool, masses[m], atm, Filter.SDSS_U);
+					double g = wdModels.quantity(tcool, masses[m], atm, Filter.SDSS_G);
 					script.append((u - g) + " " + u).append(OSChecker.newline);
 				}
 				script.append("e").append(OSChecker.newline);

@@ -2,12 +2,15 @@ package wd.wdlf.algo;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
 
 import infra.os.OSChecker;
 import numeric.data.DiscreteFunction1D;
 import photometry.Filter;
+import photometry.util.PhotometryUtils;
 import util.ArrayUtil;
+import util.CharUtil;
 import util.ParseUtil;
 
 /**
@@ -32,7 +35,7 @@ public class BaseWdlf {
     /**
      * Name of WDLF, used to identify it and set plot labels etc.
      */
-    public String target;
+    public String name;
     
     /**
      * Reference for the WDLF observation (e.g. 'Harris et al (2013)')
@@ -43,12 +46,13 @@ public class BaseWdlf {
      * Default constructor.
      */
     public BaseWdlf() {
-    	target = "default";
+    	name = "default";
     	reference = "default";
     }
     
     /**
      * Main constructor.
+     * 
      * @param binCentres
      * 	Array of magnitude bin centre
      * @param binWidths
@@ -65,6 +69,7 @@ public class BaseWdlf {
     /**
      * Alternative constructor that accepts a distance modulus parameter to shift the observed
      * WDLF from apparent to absolute magnitudes, ready for modelling.
+     * 
      * @param binCentres
      * 	Array of magnitude bin centre
      * @param binWidths
@@ -91,12 +96,58 @@ public class BaseWdlf {
     }
     
     /**
-     * Set the {@link #target} of WDLF, used to identify it and set plot labels etc.
-     * @param target
-     * 	The {@link #target} to set.
+     * Copy constructor.
+     * 
+     * @param copyMe
+     * 	The {@link BaseWdlf} to copy.
      */
-    public final void setTarget(String target) { 
-    	this.target = target;
+    public BaseWdlf(BaseWdlf copyMe) {
+    	this(copyMe, false);
+    }
+
+    /**
+     * Copy constructor, optionally with resampling of the input density values.
+     * 
+     * @param copyMe
+     * 	The {@link BaseWdlf} to copy.
+     * @param resample
+     * 	Boolean flag indicating if the density values are to be resampled from the inputs (true) or not (false). If so,
+     * the density values will be resampled assuming the input WDLF is the ground truth, i.e. the new density values are
+     * drawn from a Gaussian distribution centred on the input values and with a standard deviation equal to the error
+     * on each point.
+     */
+    public BaseWdlf(BaseWdlf copyMe, boolean resample) {
+    	this.filter = copyMe.filter;
+    	this.name = copyMe.name;
+    	this.reference = copyMe.reference;
+    	this.density = new DiscreteFunction1D(copyMe.density);
+    	
+    	if(true) {
+    		
+    		Random rng = new Random();
+    		
+    		for(int i=0; i<density.size(); i++) {
+    			double value = density.getBinContents(i);
+    			double std = density.getBinUncertainty(i);
+    			
+    			// Resampled value must be positive
+    			double newVal = -10;
+    			while(newVal <= 0.0) {
+    				newVal = value + rng.nextGaussian() * std;
+    			}
+    			
+    			density.setBin(i, newVal, std);
+    		}
+    	}
+    }
+    
+    /**
+     * Set the {@link #name} of WDLF, used to identify it and set plot labels etc.
+     * @param name
+     * 	The {@link #name} to set.
+     */
+    public final void setName(String name) { 
+    	this.name = name;
     }
     
     public final void setReference(String reference) {
@@ -127,13 +178,15 @@ public class BaseWdlf {
      */
     @Override
     public String toString() {
+    	
         StringBuilder out = new StringBuilder();
         
-        for(int i=0; i<density.size(); i++)
+        for(int i=0; i<density.size(); i++) {
             out.append(density.getBinCentre(i)).append("\t")
                         .append(density.getBinWidth(i)).append("\t")
                         .append(density.getBinContents(i)).append("\t")
                         .append(density.getBinUncertainty(i)).append(OSChecker.newline);
+        }
         
         return out.toString();
     }
@@ -155,25 +208,45 @@ public class BaseWdlf {
      * including all data points statically within the plot script.
      */
     public String getLuminosityFunctionGnuplotScript() {
+    	
         double[] xrange = getXRange();
         double[] yrange = getYRange();
         
+        double xmin = xrange[0]-1;
+        double xmax = xrange[1]+1;
+        
+        // Range in log(L/L_{solar})
+        double x2min = PhotometryUtils.mbolToLogLL0(xmin);
+        double x2max = PhotometryUtils.mbolToLogLL0(xmax);
+        
+        
         StringBuilder output = new StringBuilder();
         output.append("set terminal pngcairo enhanced color size 640,480").append(OSChecker.newline);
+        
         output.append("f(s,n) = (s-n>0) ? (s-n) : 9E-18").append(OSChecker.newline);
-        output.append("set tics out").append(OSChecker.newline);
-        output.append("set xrange ["+(xrange[0]-1)+":"+(xrange[1]+1)+"]").append(OSChecker.newline);
+        
+        output.append("set xtics out nomirror").append(OSChecker.newline);
+        
+        output.append("set xrange ["+xmin+":"+xmax+"]").append(OSChecker.newline);
         output.append("set xlabel \"{/"+OSChecker.getFont()+"=14 "+filter.toString()+"}\"").append(OSChecker.newline);
         output.append("set mxtics 2").append(OSChecker.newline);
         output.append("set xtics 2 font \""+OSChecker.getFont()+",10\"").append(OSChecker.newline);
+        
+
+        output.append("set x2range ["+x2min+":"+x2max+"]").append(OSChecker.newline);
+        output.append("set x2label \"{/"+OSChecker.getFont()+"=14 Log(L/L_"+CharUtil.solar+")"+"}\"").append(OSChecker.newline);
+        output.append("set mx2tics 2").append(OSChecker.newline);
+        output.append("set x2tics 0.5 out font \""+OSChecker.getFont()+",10\"").append(OSChecker.newline);
+        
+        
         output.append("set yrange ["+yrange[0]+":"+yrange[1]+"]").append(OSChecker.newline);
-        output.append("set ytics 1 font \""+OSChecker.getFont()+",10\"").append(OSChecker.newline);
+        output.append("set ytics 1 out font \""+OSChecker.getFont()+",10\"").append(OSChecker.newline);
         output.append("set mytics 2").append(OSChecker.newline);
         output.append("set ylabel \"{/"+OSChecker.getFont()+"=14 Log {/Symbol \106} [N "+filter.toString()+"^{-1}]}\" offset 0,0").append(OSChecker.newline);
         output.append("set style line 1 lt 1 pt 5 ps 0.5  lc rgb \"black\" lw 1").append(OSChecker.newline);
         output.append("set bar 0.25").append(OSChecker.newline);
         output.append("set key top left Left").append(OSChecker.newline);
-        output.append("set title '{/"+OSChecker.getFont()+"=10 WDLF for "+target+"}'").append(OSChecker.newline);
+        output.append("set title '{/"+OSChecker.getFont()+"=10 WDLF for "+name+"}'").append(OSChecker.newline);
         output.append("plot '-' u 1:(log10($3)) w lp ls 1 notitle,\\").append(OSChecker.newline);
         output.append("  	'-' u 1:(log10($3)):(log10(f($3,$4))):(log10($3+$4)) w yerrorbars ls 1 title \""+reference+"\" ").append(OSChecker.newline);
         
@@ -192,11 +265,22 @@ public class BaseWdlf {
      * 	A suitable Y axis range for plotting logarithmic data points.
      */
     public double[] getYRange() {
-    	// Range of density values
-        double[] linRange = density.getRangeY();
     	
-        double logMin = Math.log10(linRange[0]);
-        double logMax = Math.log10(linRange[1]);
+    	// Range of density values
+    	double min = Double.MAX_VALUE;
+    	double max = -Double.MAX_VALUE;
+    	for(double val : density.getBinContents()) {
+    		
+    		if(val > 0.0) {
+    			// Use smallest nonzero value, so can take the log
+    			min = Math.min(min,  val);
+    		}
+    		
+    		max = Math.max(max, val);
+    	}
+    	
+        double logMin = Math.log10(min);
+        double logMax = Math.log10(max);
     	
         // Add 1/10 of the range on each end, so that function occupies middle
         // 4/5 of plot area
@@ -217,7 +301,7 @@ public class BaseWdlf {
     public double[] getXRange() {
         return density.getRangeX();
     }
-
+    
     /**
      * Read WDLF data points from a File. The file must obey the following format: one
      * long table of data with one row per magnitude bin. Each row contains four columns

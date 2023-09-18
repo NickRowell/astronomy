@@ -1,5 +1,7 @@
 package ifmr.exec;
 
+import ifmr.algo.BaseIfmr;
+import ifmr.algoimpl.Ifmr_Cummings2018;
 import ifmr.algoimpl.Ifmr_Renedo2010_Z0p01;
 import ifmr.util.IfmrUtil;
 
@@ -16,7 +18,8 @@ public class ComputeBreakdownMass {
 	public static void main(String[] args) {
 		
 		// Get instance
-		Ifmr_Renedo2010_Z0p01 ifmr = new Ifmr_Renedo2010_Z0p01();
+//		Ifmr_Renedo2010_Z0p01 ifmr = new Ifmr_Renedo2010_Z0p01();
+		BaseIfmr ifmr = new Ifmr_Cummings2018();
 		
 		double m_breakdown = IfmrUtil.getBreakdownMass(ifmr, false);
 		

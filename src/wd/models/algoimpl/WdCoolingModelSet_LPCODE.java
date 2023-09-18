@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,6 +13,7 @@ import java.util.TreeMap;
 
 import ifmr.algo.BaseIfmr;
 import ifmr.algoimpl.Ifmr_Renedo2010_Z0p01;
+import infra.Quantity;
 import ms.lifetime.algo.PreWdLifetime;
 import ms.lifetime.algoimpl.PreWdLifetime_LPCODE;
 import numeric.functions.MonotonicLinear;
@@ -22,6 +22,7 @@ import photometry.util.PhotometryUtils;
 import util.ParseUtil;
 import wd.models.algo.WdCoolingModelGrid;
 import wd.models.algo.WdCoolingModelSet;
+import wd.models.infra.AtmosphereParameter;
 import wd.models.infra.WdAtmosphereType;
 
 /**
@@ -107,33 +108,41 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 		wdAtmosphereTypes.add(WdAtmosphereType.H);
 		wdAtmosphereTypes.add(WdAtmosphereType.He);
 		
-		List<Filter> filtersArrH = Arrays.asList(Filter.M_BOL,
-//				Filter.F220W, Filter.F250W, Filter.F330W, Filter.F344N, Filter.F435W,
-//				Filter.F475W, Filter.F502N, Filter.F550M, Filter.F555W,
-				Filter.F606W_ACS,
-//				Filter.F625W, Filter.F658N, Filter.F660N, Filter.F775W,
-				Filter.F814W_ACS,
-//				Filter.F850LP, Filter.F892N,
-				Filter.U, Filter.B, Filter.V, Filter.R,
-				Filter.I, Filter.J, Filter.H, Filter.K,
-				Filter.G_NOM_DR2, Filter.BP_NOM_DR2, Filter.RP_NOM_DR2
-				//, Filter.L
-				);
-		Set<Filter> filtersH = new HashSet<>(filtersArrH);
+		Set<Quantity<?>> quantitiesH = new HashSet<>();
+		quantitiesH.add(AtmosphereParameter.TEFF);
+		quantitiesH.add(AtmosphereParameter.LOGG);
+		quantitiesH.add(Filter.M_BOL);
+		quantitiesH.add(Filter.F606W_ACS);
+		quantitiesH.add(Filter.F814W_ACS);
+		quantitiesH.add(Filter.U);
+		quantitiesH.add(Filter.B);
+		quantitiesH.add(Filter.V);
+		quantitiesH.add(Filter.R);
+		quantitiesH.add(Filter.I);
+		quantitiesH.add(Filter.J);
+		quantitiesH.add(Filter.H);
+		quantitiesH.add(Filter.K);
+		quantitiesH.add(Filter.G_NOM_DR2);
+		quantitiesH.add(Filter.BP_NOM_DR2);
+		quantitiesH.add(Filter.RP_NOM_DR2);
+
+		Set<Quantity<?>> quantitiesHe = new HashSet<>();
+		quantitiesHe.add(AtmosphereParameter.TEFF);
+		quantitiesHe.add(AtmosphereParameter.LOGG);
+		quantitiesHe.add(Filter.M_BOL);
+		quantitiesHe.add(Filter.F606W_ACS);
+		quantitiesHe.add(Filter.F814W_ACS);
+		quantitiesHe.add(Filter.U);
+		quantitiesHe.add(Filter.B);
+		quantitiesHe.add(Filter.V);
+		quantitiesHe.add(Filter.R);
+		quantitiesHe.add(Filter.I);
+		quantitiesHe.add(Filter.G_NOM_DR2);
+		quantitiesHe.add(Filter.BP_NOM_DR2);
+		quantitiesHe.add(Filter.RP_NOM_DR2);
 		
-		List<Filter> filtersArrHe = Arrays.asList(Filter.M_BOL,
-//				Filter.F220W, Filter.F250W, Filter.F330W, Filter.F344N, Filter.F435W,
-//				Filter.F475W, Filter.F502N, Filter.F550M, Filter.F555W,
-				Filter.F606W_ACS,
-//				Filter.F625W, Filter.F658N, Filter.F660N, Filter.F775W,
-				Filter.F814W_ACS,
-//				Filter.F850LP, Filter.F892N,
-				Filter.U, Filter.B, Filter.V, Filter.R,	Filter.I,
-				Filter.G_NOM_DR2, Filter.BP_NOM_DR2, Filter.RP_NOM_DR2);
-		Set<Filter> filtersHe = new HashSet<>(filtersArrHe);
-		
-		filtersByAtm.put(WdAtmosphereType.H, filtersH);
-		filtersByAtm.put(WdAtmosphereType.He, filtersHe);
+		quantitiesByAtm.put(WdAtmosphereType.H, quantitiesH);
+		quantitiesByAtm.put(WdAtmosphereType.He, quantitiesHe);
 		
 		// LPCODE models have different sets of mass values for the DA and DB types
 		massGridByAtm.put(WdAtmosphereType.H, daMasses);
@@ -152,7 +161,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
      *  {@inheritDoc}
      */
 	@Override
-	protected WdCoolingModelGrid load(Filter filter, WdAtmosphereType atm) {
+	protected WdCoolingModelGrid load(Quantity<?> quantity, WdAtmosphereType atm) {
 		
 		NavigableMap<Double, MonotonicLinear> mbolAsFnTcoolByMass = new TreeMap<>();
 		
@@ -180,7 +189,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 		
 		// Indices of relevant columns in data file
         int timeCol = 3;
-        int bandCol = getFilterColumn(filter, atm);
+        int bandCol = getColumn(quantity, atm);
 
 		List<String> comments = new LinkedList<>();
 		comments.add("#");
@@ -228,7 +237,7 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	        	coolingTimeArray[p] = (colourData[timeCol][p]*1E9) - preWdLifetime;
 	        	
 	        	magnitudeArray[p] = colourData[bandCol][p];
-	        	if(filter==Filter.M_BOL) {
+	        	if(quantity==Filter.M_BOL) {
 	        		// We have Log(L/Lo) rather than magnitude
 	        		magnitudeArray[p] = PhotometryUtils.logLL0toMbol(magnitudeArray[p]);
 	        	}
@@ -237,12 +246,12 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
 	        mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));
 		}
 		
-		return new WdCoolingModelGrid(filter, atm, mbolAsFnTcoolByMass);
+		return new WdCoolingModelGrid(quantity, atm, mbolAsFnTcoolByMass);
 	}
 
     /**
      * Get the index of the column in the data files that contains fluxes in the given {@link Filter}.
-     * The input files are the 'colours' files contained in the Renedo et al. dataset, i.e. those with
+     * The input files are the 'colours' files contained in the) Renedo et al. dataset, i.e. those with
      * filenames <code>cox_059316.dat</code> etc.
      * 
      * @param band
@@ -250,13 +259,34 @@ public class WdCoolingModelSet_LPCODE extends WdCoolingModelSet {
      * @return
      * 	Index (first column is zero) of the column containing fluxes in the given {@link Filter}.
      */
-    private static int getFilterColumn(Filter band, WdAtmosphereType atm) {
-    	switch(atm) {
-	    	case H: return getFilterColumnDA(band);
-	    	case He: return getFilterColumnDB(band);
-	    	default:
-	    		throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
-						" don't support atmosphere type "+atm);
+    private static int getColumn(Quantity<?> q, WdAtmosphereType atm) {
+    	
+    	if(q instanceof Filter) {
+    		Filter band = (Filter)q;
+    		switch(atm) {
+		    	case H: return getFilterColumnDA(band);
+		    	case He: return getFilterColumnDB(band);
+		    	default:
+		    		throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
+							" don't support atmosphere type "+atm);
+	    	}
+    	}
+    	
+    	else if(q instanceof AtmosphereParameter) {
+    		
+    		AtmosphereParameter ap = (AtmosphereParameter)q;
+    		
+    		switch(ap) {
+	    		case TEFF: return 0;
+	    		case LOGG: return 1;
+		    	default:
+		    		throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
+							" don't support atmosphere parameter "+ap);
+	    	}
+    	}
+    	else {
+    		throw new IllegalArgumentException(WdCoolingModelSet_LPCODE.class.getName()+
+					" don't support quantity "+q);
     	}
     }
     

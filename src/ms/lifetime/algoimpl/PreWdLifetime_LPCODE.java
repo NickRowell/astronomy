@@ -10,7 +10,7 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import ifmr.algoimpl.Ifmr_Renedo2010_Z0p01;
-import ms.lifetime.algo.PreWdLifetime;
+import ms.lifetime.algo.PreWdLifetimeTabulated;
 import numeric.functions.Linear;
 import numeric.functions.MonotonicFunction1D;
 import numeric.functions.MonotonicLinear;
@@ -27,7 +27,7 @@ import util.ParseUtil;
  * @author nrowell
  * @version $Id$
  */
-public class PreWdLifetime_LPCODE extends PreWdLifetime {
+public class PreWdLifetime_LPCODE extends PreWdLifetimeTabulated {
 
 	/**
 	 * The logger.

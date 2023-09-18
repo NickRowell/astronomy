@@ -2,7 +2,6 @@ package ms.lifetime.algoimpl;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
@@ -11,13 +10,13 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import ms.lifetime.algo.PreWdLifetime;
+import ms.lifetime.algo.PreWdLifetimeTabulated;
 import numeric.functions.MonotonicFunction1D;
 import numeric.functions.MonotonicLinear;
 import util.FileUtil;
 
 /**
- * Class provides an implementation of the {@link PreWdLifetime} that encapsulates the latest
+ * Class provides an implementation of the {@link PreWdLifetime} that provides
  * results from the Padova group, which are presented in the papers:
  * 
  * "Scaled solar tracks and isochrones in a large region of the Z-Y plane. I. From the ZAMS to the TP-AGB end for 0.15-2.5 Msun stars"
@@ -52,7 +51,7 @@ import util.FileUtil;
  * @author nrowell
  * @version $Id$
  */
-public class PreWdLifetime_Padova extends PreWdLifetime {
+public class PreWdLifetime_Padova extends PreWdLifetimeTabulated {
 	
 	/**
 	 * The relative path to the top level directory containing the Padova MS evolutionary models.
@@ -139,7 +138,7 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
         //                                                         //
         /////////////////////////////////////////////////////////////
         
-        for(File msTrack : path.listFiles(new FilenameFilterBySuffix("ms_"))) {
+        for(File msTrack : path.listFiles(pathname -> pathname.getName().startsWith("ms_"))) {
         
         	// Watch out for a couple of empty files with garbled names that are included in 
         	// the official dataset presumably by accident.
@@ -183,13 +182,13 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
             msLifetime = Double.parseDouble(finalMsLine[1]);
             
             // Find corresponding Horizontal Branch and Asymptotic Giant Branch tracks (if any)
-            for(File hbFile : path.listFiles(new FilenameFilterBySuffix("hb_"))) {
+            for(File hbFile : path.listFiles(pathname -> pathname.getName().startsWith("hb_"))) {
                 if(Math.abs(mass - readMassFromFilename(hbFile)) < 1E-9){
                 	String[] finalHbLine = FileUtil.getTail(hbFile, 1)[0].trim().split("\\s+");
                 	hbLifetime = Double.parseDouble(finalHbLine[1]);
                 }
             }
-            for(File agbFile : path.listFiles(new FilenameFilterBySuffix("agb_"))) {
+            for(File agbFile : path.listFiles(pathname -> pathname.getName().startsWith("agb_"))) {
                 if(Math.abs(mass - readMassFromFilename(agbFile)) < 1E-9){
                 	String[] finalAgbLine = FileUtil.getTail(agbFile, 1)[0].trim().split("\\s+");
                 	agbLifetime = Double.parseDouble(finalAgbLine[1]);
@@ -396,46 +395,5 @@ public class PreWdLifetime_Padova extends PreWdLifetime {
 			return parseMetallicity(pathname.getName(), new double[2]);
 		}
 	}
-
-	/**
-	 * Implementation of {@link FilenameFilter} used to filter files
-	 * by the suffix.
-	 *
-	 * @author nrowell
-	 * @version $Id$
-	 */
-	class FilenameFilterBySuffix implements FileFilter {
-		
-		/**
-		 * The suffix to filter.
-		 */
-		String suffix;
-		
-		/**
-		 * Main constructor.
-		 * @param suffix
-		 * 	The suffix to filter.
-		 */
-		public FilenameFilterBySuffix(String suffix) {
-			this.suffix = suffix;
-		}
-		
-	    /**
-	     * {@inheritDoc}}
-	     */
-	    @Override
-	    public boolean accept(File dir) {
-	    	
-	    	if(!dir.isFile()) {
-	    		return false;
-	    	}
-	    	
-	        if(dir.getName().startsWith(suffix)) {
-	        	return true;
-	        }
-	        return false;
-	    }
-	}
-
 	
 }

@@ -44,19 +44,27 @@ public abstract class Convergence {
     }
     
     /**
-     * List of chi-square values.
+     * Number of points to skip from start of chi-squared list when computing the model fit.
+     */
+    protected static final int POINTS_TO_SKIP = 1;
+    
+    /**
+     * List of chi-square values for each iteration; iterations are counted from 1.
      */
     List<Double> chi2;
     
     /**
-     * Forces concrete classes to implement the toString() method.
+     * Print the functional form of the model.
      */
     public abstract String toString();
     
     /**
-     * Get the smoothed value of Chi-square at the given iteration number.
+     * Get the smoothed value of chi-square at the given iteration number.
+     * 
      * @param iteration
+     * 	Iteration number, counting from 1.
      * @return
+     * 	The value of chi-squared at the given iteration number, derived from the model fit.
      */
     public abstract double getChiSquare(int iteration);
     
@@ -73,56 +81,50 @@ public abstract class Convergence {
      * @return
      */
     public boolean isConstrained() {
-    	return chi2.size() >= getParamsN();
+    	return (chi2.size() - POINTS_TO_SKIP) >= getParamsN();
     }
     
     /**
-     * Test internal list for convergence. Argument is relative change in
-     * chi2 at final value that indicates convergence.
+     * Test for convergence by analysis of the model chi-squared.
+     * 
+     * @param threshold
+     * 	Threshold on the absolute value of the relative change in chi-squared over the final two values in the
+     * list; if the observed (model) value is less than this then convergence has been reached.
      */
     public boolean hasConverged(double threshold){
-        
-        // Check relative change at latest iteration.
-        if(getRelativeChangeAtLatestIteration() < threshold)
-            // Converged
-            return true;
-        
-        // Not converged
-        return false;
+    	return getRelativeAbsChangeAtLatestIteration() < threshold;
     }
     
     /**
-     * Get relative (fractional) change in chi-square from iteration number
-     * N-1 to iteration number N. First iteration is numbered 1.
+     * Get absolute value of the relative (fractional) change in chi-square from iteration number N-1 to iteration number N.
+     * 
+     * @param N
+     * 	Iteration number, counting from 1.
      */
-    public double getRelativeChangeAtIteration(int N){
+    public double getRelativeAbsChangeAtIteration(int N){
     
         // chi-square for latest iteration
         double chi2_N = getChiSquare(N);
+        
         // chi-square for previous iteration
         double chi2_Nm1 = getChiSquare(N-1);        
         
-        double rel_change = (chi2_Nm1-chi2_N)/chi2_Nm1;
+        double relChange = (chi2_Nm1-chi2_N)/chi2_Nm1;
         
-        //System.out.println("Latest interpolated chi-square; "+chi2_N);
-        //System.out.println("Previous interpolated chi-squ.: "+chi2_Nm1);
-        //System.out.println("Relative change = "+rel_change);   
-        
-        // Return relative change.
-        return rel_change;      
-    
+        // Return absolute value of the relative change.
+        return Math.abs(relChange);
     }
     
     /**
-     * Get relative (fractional) change in chi-square at latest iteration.
-     * Iteration numbers are counted from 1, so chi2.size() correctly indexes
-     * the final iteration in the list.
+     * Get relative (fractional) change in chi-square at the final iteration.
      */
-    public double getRelativeChangeAtLatestIteration(){
-        return getRelativeChangeAtIteration(chi2.size());
+    public double getRelativeAbsChangeAtLatestIteration(){
+        return getRelativeAbsChangeAtIteration(chi2.size());
     }
     
     /**
+     * TODO: need to update this to reflect the new usage of the chi-squared list and convergence detection.
+     * 
      * Create a Gnuplot plot of the chi-square trend and model fit. If the list of chi-square
      * values is empty then a placeholder plot is generated.
      * @return
@@ -146,18 +148,18 @@ public abstract class Convergence {
 	    	script.append("'' w l notitle").append(OSChecker.newline);
 	    	
 	    	for(int i=0; i<chi2.size(); i++) {
-	    		script.append(i+"\t"+chi2.get(i)).append(OSChecker.newline);
+	    		script.append((i+1)+"\t"+chi2.get(i)).append(OSChecker.newline);
 	    	}
 	    	script.append("e").append(OSChecker.newline);
 	    	for(int i=0; i<chi2.size(); i++) {
-	    		script.append(i+"\t"+getChiSquare(i)).append(OSChecker.newline);
+	    		script.append((i+1)+"\t"+getChiSquare(i+1)).append(OSChecker.newline);
 	    	}
 	    	script.append("e").append(OSChecker.newline);
     	}
     	else {
     		script.append("plot '-' w p pt 5 ps 0.5 notitle").append(OSChecker.newline);
 	    	for(int i=0; i<chi2.size(); i++) {
-	    		script.append(i+"\t"+chi2.get(i)).append(OSChecker.newline);
+	    		script.append((i+1)+"\t"+chi2.get(i)).append(OSChecker.newline);
 	    	}
 	    	script.append("e").append(OSChecker.newline);
     	}
@@ -183,7 +185,7 @@ public abstract class Convergence {
     	if(vals.isEmpty()) {
     		return Double.NaN;
     	}
-    	double max = vals.get(0);
+    	double max = -Double.MAX_VALUE;
     	for(Double val : vals) {
     		max = Math.max(val, max);
     	}
@@ -214,42 +216,44 @@ class PowerLawConvergence extends Convergence{
      * 	The list of Chi-squared points to smooth over.
      */
     public PowerLawConvergence(List<Double> chi2){
+    	
+    	throw new RuntimeException("Needs to be revised considering that chi2 list now contains all values including the first!");
         
-        this.chi2 = chi2;
-        
-        if(!isConstrained()) {
-        	return;
-        }
-        
-        // Build design matrix and chi-square column vector from logarithm of 
-        // iteration number and chi-square value.
-        double[][] a = new double[this.chi2.size()][2];
-        double[][] x = new double[this.chi2.size()][1];
-        
-        // index into elements of a and x. Also number of iterations (minus 1), 
-        // but must shift by +1 so that first iteration has number 1. Otherwise
-        // logarithm is invalid.
-        int index=0;
-        
-        for(Double data : this.chi2){
-            a[index][0] = Math.log(index+1);
-            a[index][1] = 1;
-            x[index++][0] = Math.log(data);
-        }
-        
-        // Convert to JAMA matrix types for manipulation
-        Matrix A = new Matrix(a);
-        Matrix X = new Matrix(x);
-        
-        Matrix M = A.solve(X);
-        
-        // log(chi^2) = m * log(iteration #) + c
-        double m = M.get(0,0);
-        double c = M.get(1,0);
-        
-        // chi^2 = S * (iteration # )^T
-        S = Math.exp(c);
-        T = m;
+//        this.chi2 = chi2;
+//        
+//        if(!isConstrained()) {
+//        	return;
+//        }
+//        
+//        // Build design matrix and chi-square column vector from logarithm of 
+//        // iteration number and chi-square value.
+//        double[][] a = new double[this.chi2.size()][2];
+//        double[][] x = new double[this.chi2.size()][1];
+//        
+//        // index into elements of a and x. Also number of iterations (minus 1), 
+//        // but must shift by +1 so that first iteration has number 1. Otherwise
+//        // logarithm is invalid.
+//        int index=0;
+//        
+//        for(Double data : this.chi2){
+//            a[index][0] = Math.log(index+1);
+//            a[index][1] = 1;
+//            x[index++][0] = Math.log(data);
+//        }
+//        
+//        // Convert to JAMA matrix types for manipulation
+//        Matrix A = new Matrix(a);
+//        Matrix X = new Matrix(x);
+//        
+//        Matrix M = A.solve(X);
+//        
+//        // log(chi^2) = m * log(iteration #) + c
+//        double m = M.get(0,0);
+//        double c = M.get(1,0);
+//        
+//        // chi^2 = S * (iteration # )^T
+//        S = Math.exp(c);
+//        T = m;
         
     }
 
@@ -301,21 +305,28 @@ class PowerLawConvergence extends Convergence{
  */
 class SlidingLinear extends Convergence{
 
-    /** Maximum window size (smoothing length) for sliding linear function. */
-    private static int WINDOW = 5;
+    /**
+     * Maximum window size (smoothing length) for sliding linear function.
+     */
+    private static final int WINDOW = 5;
     
-    /** Gradient of linear fit. */
+    /**
+     * Gradient of linear fit.
+     */
     double m;
     
-    /** Offset of linear fit. */
+    /**
+     * Offset of linear fit.
+     */
     double c;
     
     /**
      * Main constructor.
+     * 
      * @param chi2
      * 	The list of Chi-squared points to smooth over.
      */
-    public SlidingLinear(List<Double> chi2){
+    public SlidingLinear(List<Double> chi2) {
         
         this.chi2 = chi2;
 
@@ -325,20 +336,22 @@ class SlidingLinear extends Convergence{
         
         // How many points are to be used in line fit? Maximum is WINDOW, but
         // for first few iterations there won't be enough points.
-        int N = Math.min(chi2.size(),WINDOW);
+        int N = Math.min(chi2.size() - POINTS_TO_SKIP, WINDOW);
 
         // Build design matrix and chi-square column vector
         double[][] a = new double[N][2];
         double[][] x = new double[N][1];
         
-        // Fit straight line to final WINDOW elements
-        
-        // index into elements of a and x. Iterations start counting from 1,
-        // so that most recent iteration has index chi2.size().
-        for(int index = this.chi2.size() - N; index<this.chi2.size(); index++){
-            a[index - (this.chi2.size() - N)][0] = index+1;
-            a[index - (this.chi2.size() - N)][1] = 1;
-            x[index - (this.chi2.size() - N)][0] = this.chi2.get(index);            
+        // Fit straight line to final N elements
+        for(int idx = 0; idx < N; idx++) {
+        	
+        	// Index of element in chi2 list
+        	int chi2Idx = this.chi2.size() - N + idx;
+        	
+        	// Model coefficient is iteration number, which is index in chi-squared list plus one
+        	a[idx][0] = chi2Idx + 1;
+            a[idx][1] = 1;
+            x[idx][0] = this.chi2.get(chi2Idx);  
         }
         
         // Convert to JAMA matrix types for manipulation
@@ -347,10 +360,9 @@ class SlidingLinear extends Convergence{
         
         Matrix M = A.solve(X);
         
-        // chi^2 = m * (iteration #) + c 
+        // chi^2 = m * (iteration # counting from zero) + c 
         m = M.get(0,0);
         c = M.get(1,0);
-        
     }   
     
     /**
@@ -362,23 +374,30 @@ class SlidingLinear extends Convergence{
     }
     
     @Override
-    public String toString(){
+    public String toString() {
     
-
-        StringBuilder out = new StringBuilder();
-        int index = 0;
-        for(Double chi : chi2) out=out.append("chi2(").append(++index).append("): ").append(chi).append("\n");
+//        StringBuilder out = new StringBuilder();
+//        int index = 0;
+//        
+//        for(Double chi : chi2) {
+//        	out.append("chi2(").append(index++).append("): ").append(chi).append("\n");
+//        }
+//        
+//        out.append("\nFitted to final ").append(Math.min(chi2.size(),WINDOW)).append(" points:\nf(x) = ").append(m).append(" * x + ").append(c).append("\n");
+//        
+//        return out.toString();
         
-        out=out.append("\nFitted to final ").append(Math.min(chi2.size(),WINDOW)).append(" points:\nf(x) = ").append(m).append(" * x + ").append(c).append("\n");
-        
-        return out.toString();
+        return String.format("f(x) = %f * x + %f", m, c);
         
     }
     
     /**
      * Get interpolated chi-square at some iteration number.
+     * 
      * @param iteration
-     * @return 
+     * 	Iteration number; first iteration is number 1.
+     * @return
+     * 	The model chi-squared value derived from the sliding linear fit.
      */
     @Override
     public double getChiSquare(int iteration){
@@ -387,7 +406,7 @@ class SlidingLinear extends Convergence{
     		throw new IllegalStateException("Convergence instance is not constrained!");
     	}
     	
-        return m * (iteration+1) + c;
+        return m * iteration + c;
     }    
     
 }

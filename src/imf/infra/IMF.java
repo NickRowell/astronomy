@@ -1,6 +1,7 @@
 package imf.infra;
 
 import imf.algo.BaseImf;
+import imf.algoimpl.Chabrier03;
 import imf.algoimpl.IMF_Kroupa;
 import imf.algoimpl.IMF_PowerLaw;
 
@@ -16,7 +17,8 @@ public enum IMF {
 	 * All available {@link BaseImf} implementations encapsulated in a corresponding {@link IMF}
 	 */
 	KROUPA(new IMF_Kroupa()),
-    POWER_LAW(new IMF_PowerLaw());
+    POWER_LAW_SALPETER(new IMF_PowerLaw(-2.35)),
+    CHABRIER03(new Chabrier03());
 
 	/**
 	 * The {@link BaseImf} that backs this {@link IMF}

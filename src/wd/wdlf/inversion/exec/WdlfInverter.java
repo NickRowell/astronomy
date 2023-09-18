@@ -50,7 +50,7 @@ public class WdlfInverter extends JPanel {
 	 * The serial version UID.
 	 */
 	private static final long serialVersionUID = 5831553151279215720L;
-
+	
 	/**
 	 * Main {@link InversionState} instance that encapsulates all parameters of inversion algorithm.
 	 */

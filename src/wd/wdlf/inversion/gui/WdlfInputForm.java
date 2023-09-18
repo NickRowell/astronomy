@@ -1,6 +1,6 @@
 package wd.wdlf.inversion.gui;
 
-import infra.gui.IPanel;
+import infra.io.Gnuplot;
 import photometry.Filter;
 
 import java.awt.BorderLayout;
@@ -8,12 +8,14 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -48,9 +50,9 @@ public class WdlfInputForm extends EntryForm {
     private final InversionState inversionState;
     
     /**
-     * The {@link IPanel} presenting the WDLF plot.
+     * The {@link JLabel} presenting the WDLF plot.
      */
-    final IPanel wdlfPlotPanel;
+    final JLabel wdlfPlotPanel;
     
     /**
      * The {@link JComboBox} used to select built in {@link ObservedWdlf}s.
@@ -97,7 +99,7 @@ public class WdlfInputForm extends EntryForm {
     	setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Select input WDLF to be inverted"),
     			BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 
-        wdlfPlotPanel = new IPanel();
+        wdlfPlotPanel = new JLabel(new ImageIcon());
         wdlfPlotPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createTitledBorder("Loaded WDLF"), 
         		BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         
@@ -260,7 +262,10 @@ public class WdlfInputForm extends EntryForm {
             out.write(inversionState.wdlf_obs.getLuminosityFunctionGnuplotScript());
             out.close();
             
-            wdlfPlotPanel.plotGnuplot(script);
+            BufferedImage img = Gnuplot.executeScript(script);
+            
+            ((ImageIcon)wdlfPlotPanel.getIcon()).setImage(img);
+            wdlfPlotPanel.repaint();
         }
         catch(IOException ioe)
         {
@@ -363,7 +368,7 @@ class ObsWDLFInputVerifier extends EntryFormResult
         if(valid) {
             // Values all ok - initialise WDLF
             this.wdlf_obs = new BaseWdlf(data[0], data[1], data[2], data[3], distMod);
-            this.wdlf_obs.setTarget("User WDLF");
+            this.wdlf_obs.setName("User WDLF");
             this.wdlf_obs.setFilter(filter);
         }
         

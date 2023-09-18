@@ -4,8 +4,8 @@ import numeric.functions.MonotonicLinear;
 import numeric.integration.IntegrableFunction;
 
 /**
- * Class provides a function to model the estimated parallax standard error for stars
- * in the Gaia catalogue DR2.
+ * Class provides a function to estimate the parallax standard error as a function of apparent
+ * G magnitude for stars in the Gaia catalogue DR2.
  * 
  * @author nrowell
  * @version $Id$

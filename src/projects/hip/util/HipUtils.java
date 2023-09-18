@@ -29,7 +29,7 @@ public class HipUtils {
 	/**
 	 * Path to the Hipparcos catalogue file.
 	 */
-	public static final File hipCatFile = new File("/home/nrowell/Astronomy/Data/Hipparcos/Catalogues/Main_Cat.d");
+	public static final File hipCatFile = new File("/home/nrowell/Projects/Astronomy/Data/Hipparcos/Catalogues/Main_Cat.d");
 	
 	/**
 	 * Loads the Hipparcos catalogue.

@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -20,7 +21,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.border.BevelBorder;
 import javax.swing.border.TitledBorder;
 
-import infra.gui.IPanel;
 import sfr.algoimpl.InitialGuessSFR;
 import wd.wdlf.infra.EntryForm;
 import wd.wdlf.infra.EntryFormResult;
@@ -30,7 +30,7 @@ import wd.wdlf.inversion.infra.MonteCarloInverter;
 import wd.wdlf.inversion.util.InversionPlotUtil;
 
 /**
- * Main form that performs inversion algorithm and display results of each iteration in GUI.
+ * Main form that performs inversion algorithm and displays results of each iteration in GUI.
  * 
  * @author nickrowell
  */
@@ -61,23 +61,23 @@ public class InversionForm extends EntryForm {
      * The {@link IPanel} presenting the P_{MS} plot: the joint distribution of progenitor
      * mass and formation time.
      */
-    private final IPanel pmsPlotPanel;
+    private final JLabel pmsPlotPanel;
     
     /**
      * The {@link IPanel} presenting the P_{WD} plot: the joint distribution of white dwarf
      * mass and magnitude.
      */
-    private final IPanel pwdPlotPanel;
+    private final JLabel pwdPlotPanel;
     
     /**
      * The {@link IPanel} presenting the chi-square statistic for each iteration.
      */
-    private final IPanel chi2Panel;
+    private final JLabel chi2Panel;
     
     /**
      * The {@link IPanel} presenting the residuals of the WDLF model fit.
      */
-    private final IPanel residualPanel;
+    private final JLabel residualPanel;
     
     /**
      * Main constructor.
@@ -90,10 +90,10 @@ public class InversionForm extends EntryForm {
     	this.inversionState = inversionState;
     	
         // Set up GUI
-        pwdPlotPanel = new IPanel();
-        pmsPlotPanel = new IPanel();
-        chi2Panel = new IPanel();
-        residualPanel = new IPanel();
+        pwdPlotPanel = new JLabel(new ImageIcon());
+        pmsPlotPanel = new JLabel(new ImageIcon());
+        chi2Panel = new JLabel(new ImageIcon());
+        residualPanel = new JLabel(new ImageIcon());
         
         pwdPlotPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
         pmsPlotPanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
@@ -179,6 +179,9 @@ public class InversionForm extends EntryForm {
             
 			inversion.performSingleIteration();
 			
+			// TODO: need to update the convergence detection and chi-squared plotting code here to reflect the changes
+			// that were made during developments for 2023 paper with Marco.
+			
             // List of chi-square statistics to examine for convergence
             List<Double> chi2 = inversionState.iterations==1 ? new LinkedList<Double>() : inversionState.chi2.subList(1,inversionState.chi2.size());
             		
@@ -188,10 +191,13 @@ public class InversionForm extends EntryForm {
         	inversionState.currentSfr = (InitialGuessSFR)inversionState.updatedSfr.copy();
         	
             // Plot the diagnostics
-            chi2Panel.setImage(convergence.getGnuplotPlot());
-            pwdPlotPanel.setImage(inversion.pwdPlot);
-            pmsPlotPanel.setImage(inversion.pmsPlot);
-			
+            ((ImageIcon)chi2Panel.getIcon()).setImage(convergence.getGnuplotPlot());
+            chi2Panel.repaint();
+            ((ImageIcon)pwdPlotPanel.getIcon()).setImage(inversion.pwdPlot);
+            pwdPlotPanel.repaint();
+            ((ImageIcon)pmsPlotPanel.getIcon()).setImage(inversion.pmsPlot);
+            pmsPlotPanel.repaint();
+            
             // Finished iteration. Check for convergence.
             if(inversionState.iterations==1) {
             	// Don't check on first iteration; this is mainly updating the normalisation
@@ -204,7 +210,7 @@ public class InversionForm extends EntryForm {
             }
             else {
                 // Get relative change in chi-square with latest iteration
-                double fitImprovement = convergence.getRelativeChangeAtLatestIteration();
+                double fitImprovement = convergence.getRelativeAbsChangeAtLatestIteration();
                 
                 logger.info(String.format(iterUpdStr, inversionState.iterations, inversionState.getLastChi2(), fitImprovement*100));
         
@@ -259,8 +265,10 @@ public class InversionForm extends EntryForm {
 	public void initialise() {
 		// Plot the empty P_{MS} and P_{WD} figures.
         try {
-            pwdPlotPanel.setImage(InversionPlotUtil.getPwd(inversionState.outputDirectory, inversionState, null));
-            pmsPlotPanel.setImage(InversionPlotUtil.getPms(inversionState.outputDirectory, inversionState, null));
+        	((ImageIcon)pwdPlotPanel.getIcon()).setImage(InversionPlotUtil.getPwd(inversionState.outputDirectory, inversionState, null));
+        	pwdPlotPanel.repaint();
+        	((ImageIcon)pmsPlotPanel.getIcon()).setImage(InversionPlotUtil.getPms(inversionState.outputDirectory, inversionState, null));
+        	pmsPlotPanel.repaint();
         }
         catch(IOException e) {
         	logger.log(Level.SEVERE, "IOException initialising the "+this.getClass().getSimpleName(), e);

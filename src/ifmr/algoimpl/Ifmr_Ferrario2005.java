@@ -12,8 +12,7 @@ import ifmr.algo.BaseIfmr;
  * 
  * @author nickrowell
  */
-public class Ferrario_2005 extends BaseIfmr {
-	
+public class Ifmr_Ferrario2005 extends BaseIfmr {
 	
 	/**
 	 * Parameter A of linear model mf = A*(mi) + B
@@ -24,8 +23,6 @@ public class Ferrario_2005 extends BaseIfmr {
 	 * Parameter B of linear model mf = A*(mi) + B
 	 */
 	private double B = 0.43443;
-	
-	
 	
 	/**
 	 * {@inheritDoc}
@@ -168,7 +165,4 @@ public class Ferrario_2005 extends BaseIfmr {
   //    
   //}
 
-    
-    
-    
 }

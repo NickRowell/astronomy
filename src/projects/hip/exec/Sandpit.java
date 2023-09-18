@@ -30,20 +30,22 @@ public class Sandpit {
 		
 		Collection<HipStar> hipStars = HipUtils.loadHipCatalogue();
 		
-		BufferedWriter out = new BufferedWriter(new FileWriter(new File("/home/nrowell/Temp/distances.txt")));
+		BufferedWriter out = new BufferedWriter(new FileWriter(new File("/home/nrowell/Gaia/ELSF/2021.03.01_SIF_FARPSF/input/bv_by_hip_id.txt")));
 		
 		
 		for(HipStar hipStar : hipStars) {
 			
-			double p = hipStar.Plx/1000.0;
-			double sigma_p = hipStar.e_Plx/1000.0;
+//			double p = hipStar.Plx/1000.0;
+//			double sigma_p = hipStar.e_Plx/1000.0;
+//			
+//			// Distance using naive method
+//			double d_naive = DistanceFromParallax.getDistance(p, sigma_p, METHOD.NAIVE);
+//			double d_cv = DistanceFromParallax.getDistance(p, sigma_p, METHOD.CONSTANT_VOLUME_DENSITY_PRIOR);
+//			double d_exp = DistanceFromParallax.getDistance(p, sigma_p, METHOD.EXP_DEC_VOLUME_DENSITY_PRIOR);
 			
-			// Distance using naive method
-			double d_naive = DistanceFromParallax.getDistance(p, sigma_p, METHOD.NAIVE);
-			double d_cv = DistanceFromParallax.getDistance(p, sigma_p, METHOD.CONSTANT_VOLUME_DENSITY_PRIOR);
-			double d_exp = DistanceFromParallax.getDistance(p, sigma_p, METHOD.EXP_DEC_VOLUME_DENSITY_PRIOR);
 			
-			out.write(d_naive+"\t"+d_cv+"\t"+d_exp+"\n");
+			
+			out.write(hipStar.HIP+"\t"+hipStar.bv+"\n");
 		}
 		out.close();
 	}

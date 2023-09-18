@@ -25,17 +25,14 @@ package wd.models.algo;
 
 import java.util.NavigableMap;
 
+import infra.Quantity;
 import numeric.functions.MonotonicLinear;
-import photometry.Filter;
 import wd.models.infra.WdAtmosphereType;
 
 /**
- * Class represents a single grid of WD cooling models: multiple cooling tracks of different mass,
- * which can be used to interpolate the cooling time to a particular magnitude.
- * 
- * The grid correponds to a single {@link Filter} and {@link WdAtmosphereType}. Multiple instances
- * of this are used to compile a {@link WdCoolingModelSet}.
- *
+ * Class represents a grid of WD cooling models for a single {@link Quantity} and {@link WdAtmosphereType},
+ * which can be used to interpolate the cooling time to a particular value of the quantity. Multiple instances of this
+ * are used to compile a {@link WdCoolingModelSet}.
  *
  * @author nrowell
  * @version $Id$
@@ -43,9 +40,9 @@ import wd.models.infra.WdAtmosphereType;
 public class WdCoolingModelGrid {
 	
 	/**
-	 * The {@link Filter}.
+	 * The {@link Quantity} that is provided by the grid.
 	 */
-	protected Filter filter;
+	protected Quantity<?> quantity;
 	
 	/**
 	 * The {@link WdAtmosphereType}.
@@ -55,24 +52,24 @@ public class WdCoolingModelGrid {
 	/**
 	 * Map of WD cooling track (represented by a {@link MonotonicLinear}) by mass.
 	 */
-    public final NavigableMap<Double, MonotonicLinear> mbolAsFnTcoolByMass;
+    public final NavigableMap<Double, MonotonicLinear> quantityAsFnTcoolByMass;
 	
     /**
      * Main constructor for the {@link WdCoolingModelGrid}.
      * 
-     * @param filter
-     * 	The {@link Filter}.
+     * @param quantity
+     * 	The {@link Quantity}.
      * @param atm
      * 	The {@link WdAtmosphereType}.
-     * @param mbolAsFnTcoolByMass
+     * @param quantityAsFnTcoolByMass
      * 	The {@link NavigableMap} of WD cooling track (represented as a {@link MonotonicLinear}) by
      * mass [M_{Solar}].
      */
-    public WdCoolingModelGrid(final Filter filter, final WdAtmosphereType atm,
-    		final NavigableMap<Double, MonotonicLinear> mbolAsFnTcoolByMass) {
-    	this.filter = filter;
+    public WdCoolingModelGrid(final Quantity<?> quantity, final WdAtmosphereType atm,
+    		final NavigableMap<Double, MonotonicLinear> quantityAsFnTcoolByMass) {
+    	this.quantity = quantity;
     	this.atm = atm;
-    	this.mbolAsFnTcoolByMass = mbolAsFnTcoolByMass;
+    	this.quantityAsFnTcoolByMass = quantityAsFnTcoolByMass;
     }
     
     /**
@@ -85,10 +82,10 @@ public class WdCoolingModelGrid {
     public boolean massIsWithinRangeOfModels(double mass){ 
     	
     	// Mass of lowest mass cooling track
-    	double lowestMass = mbolAsFnTcoolByMass.firstKey();
+    	double lowestMass = quantityAsFnTcoolByMass.firstKey();
     	
     	// Mass of highest mass cooling track
-    	double highestMass = mbolAsFnTcoolByMass.lastKey();
+    	double highestMass = quantityAsFnTcoolByMass.lastKey();
     	
         return (mass>=lowestMass && mass<=highestMass);
     }
@@ -112,26 +109,26 @@ public class WdCoolingModelGrid {
         }
         
         // If either upper or lower CoolingTrack is extrapolated, then this point is considered to be extrapolated.
-        return mbolAsFnTcoolByMass.floorEntry(mass).getValue().isXExtrapolated(age)||
-               mbolAsFnTcoolByMass.ceilingEntry(mass).getValue().isXExtrapolated(age);
+        return quantityAsFnTcoolByMass.floorEntry(mass).getValue().isXExtrapolated(age)||
+               quantityAsFnTcoolByMass.ceilingEntry(mass).getValue().isXExtrapolated(age);
     }
     
     /**
-     * Interpolate/extrapolate magnitude at arbitrary cooling time, mass and atmosphere type.
+     * Interpolate/extrapolate the {@link Quantity} at arbitrary cooling time, mass and atmosphere type.
      *
-     * @param age
+     * @param tcool
      * 	WD cooling time [yr]
      * @param mass
      * 	WD mass [M_{solar}]
      * @return
-     * 	The magitude in the requested {@link Filter}
+     * 	The value of the {@link Quantity} at the given cooling time and mass.
      */
-    public double mag(double age, double mass) {
+    public double quantity(double tcool, double mass) {
     	
-    	if(mbolAsFnTcoolByMass.containsKey(mass)) {
+    	if(quantityAsFnTcoolByMass.containsKey(mass)) {
     		// Mass coincides exactly with one of the constant mass cooling tracks.
     		// No inter-mass interpolation is necessary
-    		return mbolAsFnTcoolByMass.get(mass).interpolateY(age)[0];
+    		return quantityAsFnTcoolByMass.get(mass).interpolateY(tcool)[0];
     	}
     	
     	double lowerMass = Double.NaN;
@@ -141,36 +138,36 @@ public class WdCoolingModelGrid {
     	
     	if(massIsWithinRangeOfModels(mass)) {
     		// Linear interpolation between two neighbouring constant-mass cooling tracks
-    		lowerMass = mbolAsFnTcoolByMass.floorKey(mass);
-    		higherMass = mbolAsFnTcoolByMass.ceilingKey(mass);
+    		lowerMass = quantityAsFnTcoolByMass.floorKey(mass);
+    		higherMass = quantityAsFnTcoolByMass.ceilingKey(mass);
     		// Get the cooling tracks immediately above and below this mass.
-    		lowerMassTrack = mbolAsFnTcoolByMass.get(lowerMass);
-    		higherMassTrack = mbolAsFnTcoolByMass.get(higherMass);
+    		lowerMassTrack = quantityAsFnTcoolByMass.get(lowerMass);
+    		higherMassTrack = quantityAsFnTcoolByMass.get(higherMass);
     	}
     	else {
     		// Linear extrapolation beyond extreme range of mass. We use the two constant mass
     		// tracks closest to the edge of the range to perform a linear extrapolation.
-    		if(mass < mbolAsFnTcoolByMass.firstKey()) {
+    		if(mass < quantityAsFnTcoolByMass.firstKey()) {
     			// Extrapolation to masses lower than the lowest mass track: extract the
     			// masses of the lowest two tracks
-    			lowerMass = mbolAsFnTcoolByMass.firstKey();
-    			higherMass = mbolAsFnTcoolByMass.higherKey(lowerMass);
+    			lowerMass = quantityAsFnTcoolByMass.firstKey();
+    			higherMass = quantityAsFnTcoolByMass.higherKey(lowerMass);
     		}
     		else {
     			// Extrapolation to masses higher than the highest mass track: extract the
     			// masses of the highest two tracks
-    			higherMass = mbolAsFnTcoolByMass.lastKey();
-    			lowerMass = mbolAsFnTcoolByMass.lowerKey(higherMass);
+    			higherMass = quantityAsFnTcoolByMass.lastKey();
+    			lowerMass = quantityAsFnTcoolByMass.lowerKey(higherMass);
     		}
-    		lowerMassTrack = mbolAsFnTcoolByMass.get(lowerMass);
-    		higherMassTrack = mbolAsFnTcoolByMass.get(higherMass);
+    		lowerMassTrack = quantityAsFnTcoolByMass.get(lowerMass);
+    		higherMassTrack = quantityAsFnTcoolByMass.get(higherMass);
     	}
     	
     	// Data points at (x0,y0) and (x1,y1) where x=mass; y=magnitude
 		double x0 = lowerMass;
-		double y0 = lowerMassTrack.interpolateY(age)[0];
+		double y0 = lowerMassTrack.interpolateY(tcool)[0];
 		double x1 = higherMass;
-		double y1 = higherMassTrack.interpolateY(age)[0];
+		double y1 = higherMassTrack.interpolateY(tcool)[0];
 		// Mass at which to interpolate the magnitude
 		double x = mass;
 		// Interpolated magnitude
@@ -180,22 +177,22 @@ public class WdCoolingModelGrid {
     }
     
     /**
-     * Interpolate/extrapolate cooling time at arbitrary magnitude, mass and atmosphere
+     * Interpolate/extrapolate cooling time at arbitrary value of the {@link Quantity}, mass and atmosphere
      * type.
      *
-     * @param mag
-     * 	Magnitude in the requested {@link Filter}
+     * @param value
+     * 	Value of the {@link Quantity} at which the cooling time if to be interpolated.
      * @param mass 
      * 	WD mass [M_{solar}]
      * @return
-     * 	Cooling time [yr] to the given magnitude in the given {@link Filter}, for the given WD mass, atmosphere type.
+     * 	Cooling time [yr] to the given value of the {@link Quantity}, for the given WD mass, atmosphere type.
      */
-    public double tcool(double mag, double mass) {
+    public double tcool(double value, double mass) {
 
-    	if(mbolAsFnTcoolByMass.containsKey(mass)) {
+    	if(quantityAsFnTcoolByMass.containsKey(mass)) {
     		// Mass coincides exactly with one of the constant mass cooling tracks.
     		// No inter-mass interpolation is necessary
-    		return mbolAsFnTcoolByMass.get(mass).interpolateUniqueX(mag)[0];
+    		return quantityAsFnTcoolByMass.get(mass).interpolateUniqueX(value)[0];
     	}
 
     	double lowerMass = Double.NaN;
@@ -205,38 +202,38 @@ public class WdCoolingModelGrid {
     	
     	if(massIsWithinRangeOfModels(mass)) {
     		// Linear interpolation between two neighbouring constant-mass cooling tracks
-    		lowerMass = mbolAsFnTcoolByMass.floorKey(mass);
-    		higherMass = mbolAsFnTcoolByMass.ceilingKey(mass);
+    		lowerMass = quantityAsFnTcoolByMass.floorKey(mass);
+    		higherMass = quantityAsFnTcoolByMass.ceilingKey(mass);
     		
     		// Get the cooling tracks immediately above and below this mass.
-    		lowerMassTrack = mbolAsFnTcoolByMass.get(lowerMass);
-    		higherMassTrack = mbolAsFnTcoolByMass.get(higherMass);
+    		lowerMassTrack = quantityAsFnTcoolByMass.get(lowerMass);
+    		higherMassTrack = quantityAsFnTcoolByMass.get(higherMass);
     	}
     	else {
     		// Linear extrapolation beyond extreme range of mass. We use the two constant mass
     		// tracks closest to the edge of the range to perform a linear extrapolation.
     		
-    		if(mass < mbolAsFnTcoolByMass.firstKey()) {
+    		if(mass < quantityAsFnTcoolByMass.firstKey()) {
     			// Extrapolation to masses lower than the lowest mass track: extract the
     			// masses of the lowest two tracks
-    			lowerMass = mbolAsFnTcoolByMass.firstKey();
-    			higherMass = mbolAsFnTcoolByMass.higherKey(lowerMass);
+    			lowerMass = quantityAsFnTcoolByMass.firstKey();
+    			higherMass = quantityAsFnTcoolByMass.higherKey(lowerMass);
     		}
     		else {
     			// Extrapolation to masses higher than the highest mass track: extract the
     			// masses of the highest two tracks
-    			higherMass = mbolAsFnTcoolByMass.lastKey();
-    			lowerMass = mbolAsFnTcoolByMass.lowerKey(higherMass);
+    			higherMass = quantityAsFnTcoolByMass.lastKey();
+    			lowerMass = quantityAsFnTcoolByMass.lowerKey(higherMass);
     		}
-    		lowerMassTrack = mbolAsFnTcoolByMass.get(lowerMass);
-    		higherMassTrack = mbolAsFnTcoolByMass.get(higherMass);
+    		lowerMassTrack = quantityAsFnTcoolByMass.get(lowerMass);
+    		higherMassTrack = quantityAsFnTcoolByMass.get(higherMass);
     	}
     	
     	// Data points at (x0,y0) and (x1,y1) where x=mass; y=cooling time
 		double x0 = lowerMass;
-		double y0 = lowerMassTrack.interpolateUniqueX(mag)[0];
+		double y0 = lowerMassTrack.interpolateUniqueX(value)[0];
 		double x1 = higherMass;
-		double y1 = higherMassTrack.interpolateUniqueX(mag)[0];
+		double y1 = higherMassTrack.interpolateUniqueX(value)[0];
 		// Mass at which to interpolate the cooling time
 		double x = mass;
 		// Interpolated cooling time

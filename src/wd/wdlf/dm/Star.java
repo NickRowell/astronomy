@@ -15,10 +15,15 @@ import wd.models.infra.WdAtmosphereType;
  */
 public class Star {
 	
+	/**
+	 * Fixed seed to use for random number generation, in order to make applications deterministic.
+	 */
+	public static final long seed = 58315548397523634L;
+	
     /**
      * Instance used to assign stochastic fields of a new {@link Star}
      */
-	private static final Random random = new Random(System.currentTimeMillis());
+	private static final Random random = new Random(seed);
 	
     // Parameters of main sequence progenitor
     
@@ -266,12 +271,10 @@ public class Star {
     	return mag;
     }
     
-    /** 
-     * Set stars extrapolation status variable. 
-     */
     /**
-     * Set stars extrapolation status variable. 
-     * @param _extrap
+     * Set stars extrapolation status variable.
+     * 
+     * @param extrap
      * 	The extrapolation status (true=is extrapolated)
      */
     public void setExtrap(boolean extrap) {
@@ -280,6 +283,7 @@ public class Star {
     
     /**
      * Get stars extrapolation status.
+     * 
      * @return
      * 	The extrapolation status (true=is extrapolated)
      */

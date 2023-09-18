@@ -138,9 +138,9 @@ public class CreateModelHrDiagram {
 	    		WdAtmosphereType wd_atm = rand.nextFloat() > w_H ? WdAtmosphereType.He : WdAtmosphereType.H;
 	    		
 	    		// Get white dwarf magnitudes at the present day
-	    		double g = wdCoolingModels.mag(t_wd, mass_wd, wd_atm, Filter.G_NOM_DR2);
-	    		double bp = wdCoolingModels.mag(t_wd, mass_wd, wd_atm, Filter.BP_NOM_DR2);
-	    		double rp = wdCoolingModels.mag(t_wd, mass_wd, wd_atm, Filter.RP_NOM_DR2);
+	    		double g = wdCoolingModels.quantity(t_wd, mass_wd, wd_atm, Filter.G_NOM_DR2);
+	    		double bp = wdCoolingModels.quantity(t_wd, mass_wd, wd_atm, Filter.BP_NOM_DR2);
+	    		double rp = wdCoolingModels.quantity(t_wd, mass_wd, wd_atm, Filter.RP_NOM_DR2);
 	    		
 //	    		double g = wdCoolingModels.mag(t_wd, mass_wd, wd_atm, Filter.B);
 //	    		double bp = wdCoolingModels.mag(t_wd, mass_wd, wd_atm, Filter.B);

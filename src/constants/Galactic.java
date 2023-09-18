@@ -256,6 +256,16 @@ public class Galactic
                                       {0,thin_disk_sigma_V*thin_disk_sigma_V,0},
                                       {0,0,thin_disk_sigma_W*thin_disk_sigma_W}});
 	
+	// Mean velocity for thin disk WDs [Rowell & Kilic 2019]
+	public static final Matrix thin_disk_mean_RK19 = 
+			new Matrix(new double[][]{{},{},{}});
+	
+	// Velocity ellipsoid for thin disk WDs [Rowell & Kilic 2019]
+	public static final Matrix thin_disk_covariance_RK19 = 
+			new Matrix(new double[][]{{0,0,0},
+                                      {0,0,0},
+                                      {0,0,0}});
+	
 	// THICK DISK
 	//  "Kinematics of metal poor stars in the Galaxy III"   Chiba & Beers 2000
 	//   Taken from table 1 line 1, -0.6 < [Fe/H]  -0.8, a metallicity range expected to represent

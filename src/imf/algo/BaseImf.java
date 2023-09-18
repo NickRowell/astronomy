@@ -15,13 +15,13 @@ public abstract class BaseImf
      * this take longer than a Hubble time to form white dwarfs, so never
      * contribute to any WDLF models.
      */
-    public static double M_lower = 0.6;
+    public static final double M_lower = 0.6;
 
     /**
      * Upper limit on the stellar mass range. The IMF is normalised over this interval,
      * and no stars outside this range will be created.
      */
-    public static double M_upper  = 7.0;
+    public static final double M_upper  = 7.0;
     
     /**
      * Get the IMF at the given solar mass.

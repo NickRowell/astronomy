@@ -186,7 +186,7 @@ public class FractalSFR extends BaseDiscreteSfr {
         fractal[C] = (fractal[A] + fractal[B])/2.0;
         
         // Displacement
-        fractal[C] += std * rng.nextGaussian();
+        fractal[C] += std * random.nextGaussian();
         
         // Is this the final level of recursion?
         if(B-A == 2) return;
@@ -197,4 +197,14 @@ public class FractalSFR extends BaseDiscreteSfr {
         }
     }
     
+
+	@Override
+	public double[] getParams() {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
+
+	@Override
+	public void setParams(double[] params) {
+		throw new UnsupportedOperationException("Method not yet implemented!");
+	}
 }

@@ -11,6 +11,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import ifmr.infra.IFMR;
+import imf.infra.IMF;
 import ms.lifetime.infra.PreWdLifetimeModels;
 import photometry.Filter;
 import util.CharUtil;
@@ -39,13 +40,13 @@ public class ModellingParametersForm extends EntryForm
 	 * Reference to main ModellingParameters object. 
 	 */
     WdlfModellingParameters params;
-    
+
+    private final JComboBox<IMF> imfComboBox;
     private final JComboBox<PreWdLifetimeModels> msModelComboBox;
     private final JComboBox<IFMR> ifmrComboBox;
     private final JComboBox<WdCoolingModels> wdModelComboBox;
     private final JComboBox<Filter> filterComboBox;
     private final JTextField heHAtmosphereField;
-    private final JTextField imfExponentTextField;
     private final JTextField magErrorField;
     private final JTextField zField;
     private final JTextField sigmaZField;
@@ -84,6 +85,7 @@ public class ModellingParametersForm extends EntryForm
     {
         params = paramsIn;
         
+        imfComboBox = new JComboBox<IMF>(IMF.values());
         msModelComboBox = new JComboBox<PreWdLifetimeModels>(PreWdLifetimeModels.values());
         zField = new JTextField();
         sigmaZField = new JTextField();
@@ -94,7 +96,14 @@ public class ModellingParametersForm extends EntryForm
         filterComboBox = new JComboBox<Filter>(Filter.values());
         heHAtmosphereField = new JTextField();
         magErrorField = new JTextField();
-        imfExponentTextField = new JTextField();
+        
+        imfComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent evt) 
+            {
+                params.setIMF((IMF)imfComboBox.getSelectedItem());
+            }
+        });
         
         msModelComboBox.addActionListener(new ActionListener() {
             @Override
@@ -139,8 +148,9 @@ public class ModellingParametersForm extends EntryForm
         setBorder(BorderFactory.createTitledBorder("Set input physics parameters"));
         setPreferredSize(new java.awt.Dimension(300, 250));
         setLayout(new java.awt.GridLayout(11,2));
-        add(new JLabel("IMF exponent:"));
-        add(imfExponentTextField);
+        
+        add(new JLabel("IMF:"));
+        add(imfComboBox);
         add(new JLabel("Pre-WD lifetime models:"));
         add(msModelComboBox);
         add(new JLabel("   "+CharUtil.bullet+" Mean Z = "));
@@ -171,7 +181,6 @@ public class ModellingParametersForm extends EntryForm
         ModellingFormInputVerifier input = new ModellingFormInputVerifier(
                 heHAtmosphereField.getText(),
                 magErrorField.getText(),
-                imfExponentTextField.getText(),
                 zField.getText(),
                 sigmaZField.getText(),
                 yField.getText(),
@@ -181,12 +190,11 @@ public class ModellingParametersForm extends EntryForm
         if (input.valid) 
         {
             // Read parsed parameters back.
-            params.setIMF(input.imf);
             params.setSigM(input.s_m);
             params.setW_H(input.w);
-            params.setMetallicity(input.z);
+            params.setMeanMetallicity(input.z);
             params.setMetallicitySigma(input.sigmaZ);
-            params.setHeliumContent(input.y);
+            params.setMeanHeliumContent(input.y);
             params.setHeliumContentSigma(input.sigmaY);
         }
         
@@ -195,6 +203,7 @@ public class ModellingParametersForm extends EntryForm
 
 	@Override
 	public void initialise() {
+		imfComboBox.setSelectedItem(params.getImfEnum());
 		msModelComboBox.setSelectedItem(params.getPreWdLifetimeModelsEnum());
         zField.setText(String.format("%f",params.getMeanMetallicity()));
         sigmaZField.setText(String.format("%f",params.getMetallicitySigma()));
@@ -206,7 +215,6 @@ public class ModellingParametersForm extends EntryForm
         filterComboBox.setSelectedItem(params.getFilter());
         heHAtmosphereField.setText(String.format("%f",params.getW_H()));
         magErrorField.setText(String.format("%f",params.getSigM()));
-        imfExponentTextField.setText(String.format("%f",params.getIMF().getExponent()));
 	}
 	
     /**
@@ -246,7 +254,6 @@ class ModellingFormInputVerifier extends EntryFormResult
     // Parsed and checked values of parameters.
     public double w;
     public double s_m;
-    public double imf;
     public double z;
     public double sigmaZ;
     public double y;
@@ -258,8 +265,6 @@ class ModellingFormInputVerifier extends EntryFormResult
      * 	String containing the hydrogen-to-helium atmosphere type ratio.
      * @param s_m
      * 	String containing the magnitude error.
-     * @param imf
-     * 	String containing the IMF exponent.
      * @param z
      * 	String containing the mean metallicity (Z).
      * @param sigmaZ
@@ -269,7 +274,7 @@ class ModellingFormInputVerifier extends EntryFormResult
      * @param sigmaY
      * 	String containing the Helium content standard deviation.
      */
-    public ModellingFormInputVerifier(String w, String s_m, String imf, String z, String sigmaZ, String y, String sigmaY)
+    public ModellingFormInputVerifier(String w, String s_m, String z, String sigmaZ, String y, String sigmaY)
     {
             
         StringBuilder msg_builder = new StringBuilder();
@@ -289,15 +294,6 @@ class ModellingFormInputVerifier extends EntryFormResult
         }
         catch(Exception e) {
             msg_builder.append(e.getMessage());
-            valid = false;
-        }
-        
-        // Attempt to parse imf exponent
-        try {
-            this.imf = ParseUtil.parseAndCheckLessThan(imf, "IMF exponent", 0.0);
-        }
-        catch(Exception e) {
-        	msg_builder.append(e.getMessage());
             valid = false;
         }
         

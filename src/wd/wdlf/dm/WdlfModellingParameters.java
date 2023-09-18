@@ -4,7 +4,8 @@ import java.util.logging.Logger;
 
 import ifmr.algo.BaseIfmr;
 import ifmr.infra.IFMR;
-import imf.algoimpl.IMF_PowerLaw;
+import imf.algo.BaseImf;
+import imf.infra.IMF;
 import infra.os.OSChecker;
 import ms.lifetime.algo.PreWdLifetime;
 import ms.lifetime.infra.PreWdLifetimeModels;
@@ -29,7 +30,7 @@ public class WdlfModellingParameters {
     /**
      * Initial mass function.
      */
-    private IMF_PowerLaw imf;
+    private IMF imf;
     
     /**
      * Pre-WD lifetime models
@@ -88,7 +89,7 @@ public class WdlfModellingParameters {
      * Default constructor, setting appropriate default parameter values.
      */
     public WdlfModellingParameters() {
-        imf  = new IMF_PowerLaw(-2.3);
+        imf  = IMF.POWER_LAW_SALPETER;
         ifmr = IFMR.KALIRAI_2008;
         w_H  = 1.0;
         sigM = 0.1;
@@ -100,7 +101,7 @@ public class WdlfModellingParameters {
         sigmaY = 0.001;
         setPreWdLifetimeModels(PreWdLifetimeModels.PADOVA);
         setWdCoolingModels(WdCoolingModels.RENEDO);
-    }
+    }	
     
     /**
      * Set the {@link IFMR}.
@@ -133,16 +134,26 @@ public class WdlfModellingParameters {
     /**
      * Set the current IMF slope.
      */
-    public void setIMF(double exp) {
-    	logger.info("Setting IMF exponent to "+imf);
-    	imf.setExponent(exp);
+    public void setIMF(IMF imf) {
+    	logger.info("Setting IMF to "+imf);
+    	this.imf = imf;
     }
 
     /**
      * Get the current IMF object.
      */
-    public IMF_PowerLaw getIMF() { 
+    public IMF getImfEnum() { 
     	return imf;
+    }
+    
+    /**
+     * Get the current {@link BaseImf}.
+     * 
+     * @return
+     * 	The current {@link BaseImf}.
+     */
+    public BaseImf getIMF() {
+    	return imf.getIMF();
     }
     
     /**
@@ -178,7 +189,7 @@ public class WdlfModellingParameters {
      * @param z
      * 	The metallicity value to set.
      */
-    public void setMetallicity(double z) {
+    public void setMeanMetallicity(double z) {
     	logger.info("Setting metallicity to "+z);
     	this.z = z;
     }
@@ -216,7 +227,7 @@ public class WdlfModellingParameters {
      * @param y
      * 	The Helium content value to set.
      */
-    public void setHeliumContent(double y) {
+    public void setMeanHeliumContent(double y) {
     	logger.info("Setting Helium content to "+y);
     	this.y = y;
     }
@@ -345,7 +356,7 @@ public class WdlfModellingParameters {
     @Override
     public String toString()
     {
-        return "# IMF exponent     = " + imf.getExponent() + OSChecker.newline +
+        return "# IMF              = " + imf.toString() + OSChecker.newline +
         	   "# MS models        = " + preWdLifetimeModels.toString() + OSChecker.newline +
                "# Metallicity Z    = " + z + " +/- " + sigmaZ + OSChecker.newline +
                "# Helium content Y = " + y + " +/- " + sigmaY + OSChecker.newline + 

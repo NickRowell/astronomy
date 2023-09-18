@@ -50,9 +50,9 @@ public class WhiteDwarfNumberCounts {
 		// -) Extinction as function of line of sight distance and sky position
 		
 		// 1) The population WDLFs; in numbers per cubic parsec per magnitude
-		File thinDiskModelFile = new File("/home/nrowell/Astronomy/gaia_WDs/wdlfs/thin_disk_model_G.txt");
-		File thickDiskModelFile = new File("/home/nrowell/Astronomy/gaia_WDs/wdlfs/thick_disk_model_G.txt");
-		File spheroidModelFile = new File("/home/nrowell/Astronomy/gaia_WDs/wdlfs/spheroid_model_G.txt");
+		File thinDiskModelFile = new File("/home/nrowell/Projects/Astronomy/gaia_WDs/predicted_number_counts/wdlfs/thin_disk_model_G.txt");
+		File thickDiskModelFile = new File("/home/nrowell/Projects/Astronomy/gaia_WDs/predicted_number_counts/wdlfs/thick_disk_model_G.txt");
+		File spheroidModelFile = new File("/home/nrowell/Projects/Astronomy/gaia_WDs/predicted_number_counts/wdlfs/spheroid_model_G.txt");
 		
 		double[][] thinDiskTable = ParseUtil.parseFile(new BufferedReader(new FileReader(thinDiskModelFile)), ParseUtil.whitespaceDelim, new LinkedList<String>());
 		double[][] thickDiskTable = ParseUtil.parseFile(new BufferedReader(new FileReader(thickDiskModelFile)), ParseUtil.whitespaceDelim, new LinkedList<String>());

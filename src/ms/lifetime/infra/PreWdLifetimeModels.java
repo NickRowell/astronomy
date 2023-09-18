@@ -1,12 +1,14 @@
 package ms.lifetime.infra;
 
 import ms.lifetime.algo.PreWdLifetime;
+import ms.lifetime.algoimpl.PreWdLifetime_Hurley2000;
 import ms.lifetime.algoimpl.PreWdLifetime_LPCODE;
+import ms.lifetime.algoimpl.PreWdLifetime_PARSECv1p2;
+import ms.lifetime.algoimpl.PreWdLifetime_PARSECv2p0;
 import ms.lifetime.algoimpl.PreWdLifetime_Padova;
 
 /**
- * 
- *
+ * Enumerated type representing the different implementations of {@link PreWdLifetime} that are available.
  *
  * @author nrowell
  * @version $Id$
@@ -14,7 +16,10 @@ import ms.lifetime.algoimpl.PreWdLifetime_Padova;
 public enum PreWdLifetimeModels {
 	
 	PADOVA(new PreWdLifetime_Padova()),
-	LPCODE(new PreWdLifetime_LPCODE());
+	LPCODE(new PreWdLifetime_LPCODE()),
+	PARSECV1p2s(new PreWdLifetime_PARSECv1p2()),
+	PARSECV2p0(new PreWdLifetime_PARSECv2p0()),
+	HURLEY(new PreWdLifetime_Hurley2000());
 	
 	private PreWdLifetime preWdLifetimeModels;
 	
@@ -41,7 +46,7 @@ public enum PreWdLifetimeModels {
      */
     @Override
     public String toString() {
-    	return getPreWdLifetimeModels().toString();
+    	return getPreWdLifetimeModels().getName();
     }
 	
 }

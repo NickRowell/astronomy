@@ -1,5 +1,6 @@
 package wd.models.algo;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -10,23 +11,24 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import infra.Quantity;
 import photometry.Filter;
+import wd.models.infra.AtmosphereParameter;
 import wd.models.infra.WdAtmosphereType;
 
 /**
- * Class encapsulates a set of WD cooling models from a particular research group, i.e. Montreal, LPCODE
- * etc. In principle the set provides all atmosphere types and filters required for population modelling.
+ * Class encapsulates a set of {@link WdCoolingModelGrid} from a particular research group, i.e. Montreal, LPCODE
+ * etc, that correspond to different {@link Filter} and {@link WdAtmosphereType}. In principle the set provides all
+ * inputs required for population modelling.
  *
  * The design of this class enforces a few constraints on the set of models:
  *  - It assumes that each model grid for the same atmosphere type (but different filters) uses the same
  *    set of masses.
  *  - I.e. different filters/colours for the same atmosphere type have the same set of masses for the grid
  *  
- *
  *  - Different WD atmosphere types can have cooling tracks that use a different grid of mass points
  *  - Different WD atmosphere types can provide different filters; the model set publishes the join of
  *    these for use in modelling
- * 
  * 
  * Implementations of this class need to perform two tasks:
  * 	- Implement the load(Filter, WdAtmosphereType) method
@@ -43,10 +45,10 @@ public abstract class WdCoolingModelSet {
 	protected static final Logger logger = Logger.getLogger(WdCoolingModelSet.class.getName());
 	
 	/**
-	 * Mapping of all loaded {@link WdCoolingModelGrid} by {@link Filter} and {@link WdAtmosphereType}.
+	 * Mapping of all loaded {@link WdCoolingModelGrid} by {@link Quantity} and {@link WdAtmosphereType}.
 	 * This map is initialised in a lazy fashion as the model set is used.
 	 */
-    protected final Map<Filter, Map<WdAtmosphereType, WdCoolingModelGrid>> coolingModelsByFilter = new HashMap<>();
+    protected final Map<Quantity<?>, Map<WdAtmosphereType, WdCoolingModelGrid>> coolingModelsByQuantity = new HashMap<>();
 	
 	/**
 	 * {@link Set} of all {@link WdAtmosphereType}s provided by the models.
@@ -55,10 +57,10 @@ public abstract class WdCoolingModelSet {
 	protected final Set<WdAtmosphereType> wdAtmosphereTypes = new HashSet<WdAtmosphereType>();
 	
 	/**
-	 * Map the {@link WdAtmosphereType} to the {@link Set} of all {@link Filter}s.
+	 * Map the {@link WdAtmosphereType} to the {@link Set} of all {@link Quantity}s.
 	 * NOTE: contructors in implementing classes must populate this map.
 	 */
-	protected final Map<WdAtmosphereType, Set<Filter>> filtersByAtm = new HashMap<>();
+	protected final Map<WdAtmosphereType, Set<Quantity<?>>> quantitiesByAtm = new HashMap<>();
 	
 	/**
 	 * Map the {@link WdAtmosphereType} to the array of mass grid points.
@@ -67,15 +69,15 @@ public abstract class WdCoolingModelSet {
 	protected final Map<WdAtmosphereType, double[]> massGridByAtm = new HashMap<>();
 
     /**
-     * Load the {@link WdCoolingModelGrid} corresponding to the given {@link Filter} and
+     * Load the {@link WdCoolingModelGrid} corresponding to the given {@link Quantity} and
      * {@link WdAtmosphereType}.
      * 
-     * @param filter
-     * 	The {@link Filter} to load the cooling track data for
+     * @param quantity
+     * 	The {@link Quantity} to load the cooling track data for
      * @param atm
      * 	The {@link WdAtmosphereType} to load the cooling track data for.
      */
-    protected abstract WdCoolingModelGrid load(Filter filter, WdAtmosphereType atm);
+    protected abstract WdCoolingModelGrid load(Quantity<?> quantity, WdAtmosphereType atm);
     
     /**
      * Get the name of the source of the WD cooling models.
@@ -92,6 +94,7 @@ public abstract class WdCoolingModelSet {
     /**
      * Get a {@link Set} containing all the {@link WdAtmosphereType}s available
      * in this {@link WdCoolingModelSet}.
+     * 
      * @return
      * 	A {@link Set} containing all the {@link WdAtmosphereType}s available
      * in this {@link WdCoolingModelSet}.
@@ -101,14 +104,52 @@ public abstract class WdCoolingModelSet {
     }
     
     /**
-     * Get a {@link Set} containing the bands that are available in the cooling models for the
-     * given {@link Filter}.
+     * Get a {@link Set} containing the {@link Filter}s that are available in the cooling models for the
+     * given {@link WdAtmosphereType}.
+     * 
+     * @param atm
+     * 	The {@link WdAtmosphereType}.
      * @return
-     * 	A {@link Set} containing the bands that are available in the cooling models for the
-     * given {@link Filter}.
+     * 	A {@link Set} containing the {@link Filter}s that are available in the cooling models for the
+     * given {@link WdAtmosphereType}.
      */
     public Set<Filter> getPassbands(WdAtmosphereType atm) {
-		return filtersByAtm.get(atm);
+    	
+    	// Extract all instances of Filter from the Quantitys
+    	Set<Filter> filters = EnumSet.noneOf(Filter.class);
+    	
+    	// TODO: is there a more elegant way to do this?
+    	for(Quantity<?> q : quantitiesByAtm.get(atm)) {
+    		if(q instanceof Filter) {
+    			filters.add((Filter)q);
+    		}
+    	}
+    	
+		return filters;
+    }
+    
+    /**
+     * Get a {@link Set} containing the {@link AtmosphereParameter}s that are available in the cooling models for the
+     * given {@link WdAtmosphereType}.
+     * 
+     * @paramatm
+     * 	The {@link WdAtmosphereType}.
+     * @return
+     * 	A {@link Set} containing {@link AtmosphereParameter}s that are available in the cooling models for the
+     * given {@link WdAtmosphereType}.
+     */
+    public Set<AtmosphereParameter> getQuantities(WdAtmosphereType atm) {
+    	
+    	// Extract all instances of AtmosphereParameter from the Quantitys
+    	Set<AtmosphereParameter> atmosphereParameters = EnumSet.noneOf(AtmosphereParameter.class);
+    	
+    	for(Quantity<?> q : quantitiesByAtm.get(atm)) {
+    		if(q instanceof AtmosphereParameter) {
+    			atmosphereParameters.add((AtmosphereParameter)q);
+    		}
+    	}
+    	
+		return atmosphereParameters;
     }
     
     /**
@@ -152,38 +193,38 @@ public abstract class WdCoolingModelSet {
     }
     
     /**
-     * Get the {@link WdCoolingModelGrid} for the given {@link Filter} and {@link WdAtmosphereType}.
+     * Get the {@link WdCoolingModelGrid} for the given {@link Quantity} and {@link WdAtmosphereType}.
      * 
-     * @param filter
-     * 	The {@link Filter}
+     * @param quantity
+     * 	The {@link Quantity}.
      * @param atm
      * 	The {@link WdAtmosphereType}
      * @return
      * 	The cooling track data.
      */
-    public WdCoolingModelGrid getCoolingTracks(Filter filter, WdAtmosphereType atm) {
+    public WdCoolingModelGrid getCoolingTracks(Quantity<?> quantity, WdAtmosphereType atm) {
     	
-    	if(!getPassbands(atm).contains(filter)) {
-    		// The models don't support the requested filter
-    		throw new IllegalArgumentException("Combination of Filter ("+filter+") and atmosphere type ("+atm+") not available"
+    	if(!quantitiesByAtm.get(atm).contains(quantity)) {
+    		// The models don't support the requested quantity
+    		throw new IllegalArgumentException("Combination of Quantity ("+quantity+") and atmosphere type ("+atm+") not available"
     				+ " for "+getName()+" models!");
     	}
     	
     	// Lazy initialisation
-    	if(!coolingModelsByFilter.containsKey(filter))
+    	if(!coolingModelsByQuantity.containsKey(quantity))
     	{
-    		coolingModelsByFilter.put(filter, new TreeMap<WdAtmosphereType, WdCoolingModelGrid>());
+    		coolingModelsByQuantity.put(quantity, new TreeMap<WdAtmosphereType, WdCoolingModelGrid>());
     	}
-    	if(!coolingModelsByFilter.get(filter).containsKey(atm))
+    	if(!coolingModelsByQuantity.get(quantity).containsKey(atm))
     	{
-    		coolingModelsByFilter.get(filter).put(atm, load(filter, atm));
+    		coolingModelsByQuantity.get(quantity).put(atm, load(quantity, atm));
     	}
     	
-    	return coolingModelsByFilter.get(filter).get(atm);
+    	return coolingModelsByQuantity.get(quantity).get(atm);
     }
     
     /**
-     * Do the cooling models for the {@link Filter} and {@link WdAtmosphereType} need to be extrapolated
+     * Do the cooling models for the {@link Quantity} and {@link WdAtmosphereType} need to be extrapolated
      * at this age & atmosphere type?
      *
      * @param age
@@ -192,17 +233,17 @@ public abstract class WdCoolingModelSet {
      * 	WD mass [M_{solar}]
      * @param atm   
      * 	The {@link WdAtmosphereType}
-     * @param filter
-     * 	The {@link Filter}
+     * @param quantity
+     * 	The {@link Quantity}
      * @return		
      * 	True if the models need to be extrapolated
      */
-    public boolean isExtrapolated(double age, double mass, WdAtmosphereType atm, Filter filter){
-    	return getCoolingTracks(filter, atm).isExtrapolated(age, mass);
+    public boolean isExtrapolated(double age, double mass, WdAtmosphereType atm, Quantity<?> quantity){
+    	return getCoolingTracks(quantity, atm).isExtrapolated(age, mass);
     }
     
     /**
-     * Interpolate/extrapolate magnitude at arbitrary cooling time, mass and atmosphere type.
+     * Interpolate/extrapolate the {@link Quantity} at arbitrary cooling time, mass and atmosphere type.
      *
      * @param age
      * 	WD cooling time [yr]
@@ -210,32 +251,34 @@ public abstract class WdCoolingModelSet {
      * 	WD mass [M_{solar}]
      * @param atm   
      * 	The {@link WdAtmosphereType}
-     * @param filter
-     * 	The {@link Filter}
+     * @param quantity
+     * 	The {@link Quantity}
      * @return
      * 	The magitude in the requested {@link Filter}
      */
-    public double mag(double age, double mass, WdAtmosphereType atm, Filter filter) {
-    	return getCoolingTracks(filter, atm).mag(age, mass);
+    public double quantity(double age, double mass, WdAtmosphereType atm, Quantity<?> quantity) {
+    	return getCoolingTracks(quantity, atm).quantity(age, mass);
     }
     
     /**
-     * Interpolate/extrapolate cooling time at arbitrary magnitude, mass and atmosphere
+     * Interpolate/extrapolate cooling time at arbitrary values of the chosen {@link Quantity}, mass and atmosphere
      * type.
+     * 
+     * TODO: depending on the {@link Quantity} the value may not have a unique solution.
      *
-     * @param mag
-     * 	Magnitude in the requested {@link Filter}
+     * @param value
+     * 	The value of the {@link Quantity} at which to interpolate/extrapolate the cooling time.
      * @param mass 
      * 	WD mass [M_{solar}]
      * @param atm
      * 	The {@link WdAtmosphereType}
-     * @param filter
-     * 	The {@link Filter}
+     * @param quantity
+     * 	The {@link Quantity}
      * @return
-     * 	Cooling time [yr] to the given magnitude in the given {@link Filter}, for the given WD mass, atmosphere type.
+     * 	Cooling time [yr] to the specified value of the given {@link Quantity}, for the given WD mass, atmosphere type.
      */
-    public double tcool(double mag, double mass, WdAtmosphereType atm, Filter filter) {
-    	return getCoolingTracks(filter, atm).tcool(mag, mass);
+    public double tcool(double value, double mass, WdAtmosphereType atm, Quantity<?> quantity) {
+    	return getCoolingTracks(quantity, atm).tcool(value, mass);
     }
     
 }

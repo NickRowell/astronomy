@@ -11,7 +11,7 @@ import numeric.data.DiscreteFunction1D;
  * @version $Id$
  */
 public abstract class BaseDiscreteSfr extends BaseSfr {
-
+	
 	/**
 	 * Internal representation of the SFR model, as a set of discrete bins.
 	 */
@@ -57,7 +57,7 @@ public abstract class BaseDiscreteSfr extends BaseSfr {
      */
 	@Override
 	public double drawCreationTime() {
-        return data.draw(0, t_max);
+        return data.draw(0, t_max, random);
 	}
 
     /**

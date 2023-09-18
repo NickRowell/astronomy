@@ -50,7 +50,7 @@ public enum ObservedWdlf {
 		double[][] data = BaseWdlf.parseWdlfDataFromFile(resourceLocation);
 		
 		wdlf = new BaseWdlf(data[0], data[1], data[2], data[3], mu);
-		wdlf.setTarget(target);
+		wdlf.setName(target);
 		wdlf.setReference(reference);
 		wdlf.setFilter(filter);
 	}
@@ -60,6 +60,6 @@ public enum ObservedWdlf {
 	 */
 	public String toString()
 	{ 
-		return wdlf.reference + " - " + wdlf.target;
+		return wdlf.reference + " - " + wdlf.name;
 	}
 }

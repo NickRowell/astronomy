@@ -34,8 +34,8 @@ public class WdMassFitter extends LevenbergMarquardt {
 		double tcool = params[1];
 		
 		// Get the colour and absolute magnitude in the given bands
-		double mag = wdModels.mag(tcool, mass, atm, magFilter);
-		double colour = wdModels.mag(tcool, mass, atm, col1Filter) - wdModels.mag(tcool, mass, atm, col2Filter);
+		double mag = wdModels.quantity(tcool, mass, atm, magFilter);
+		double colour = wdModels.quantity(tcool, mass, atm, col1Filter) - wdModels.quantity(tcool, mass, atm, col2Filter);
 		
 		double[] model = new double[]{colour, mag};
 		return model;

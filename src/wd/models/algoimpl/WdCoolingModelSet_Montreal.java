@@ -12,11 +12,13 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
+import infra.Quantity;
 import numeric.functions.MonotonicLinear;
 import photometry.Filter;
 import util.ParseUtil;
 import wd.models.algo.WdCoolingModelGrid;
 import wd.models.algo.WdCoolingModelSet;
+import wd.models.infra.AtmosphereParameter;
 import wd.models.infra.WdAtmosphereType;
 
 public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
@@ -28,31 +30,33 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 		
 		wdAtmosphereTypes.add(WdAtmosphereType.H);
 		wdAtmosphereTypes.add(WdAtmosphereType.He);
-		
-		Set<Filter> filters = new HashSet<>();
-		filters.add(Filter.M_BOL);
-		filters.add(Filter.U);
-		filters.add(Filter.B);
-		filters.add(Filter.V);
-		filters.add(Filter.R);
-		filters.add(Filter.I);
-		filters.add(Filter.SDSS_U);
-		filters.add(Filter.SDSS_G);
-		filters.add(Filter.SDSS_R);
-		filters.add(Filter.SDSS_I);
-		filters.add(Filter.SDSS_Z);
-		filters.add(Filter.F606W_ACS);
-		filters.add(Filter.F814W_ACS);
+
+		Set<Quantity<?>> quantities = new HashSet<>();
+		quantities.add(AtmosphereParameter.TEFF);
+		quantities.add(AtmosphereParameter.LOGG);
+		quantities.add(Filter.M_BOL);
+		quantities.add(Filter.U);
+		quantities.add(Filter.B);
+		quantities.add(Filter.V);
+		quantities.add(Filter.R);
+		quantities.add(Filter.I);
+		quantities.add(Filter.SDSS_U);
+		quantities.add(Filter.SDSS_G);
+		quantities.add(Filter.SDSS_R);
+		quantities.add(Filter.SDSS_I);
+		quantities.add(Filter.SDSS_Z);
+		quantities.add(Filter.F606W_ACS);
+		quantities.add(Filter.F814W_ACS);
 		// Gaia magnitudes computed by Pierre Bergeron upon request, using nominal Gaia bands
-		filters.add(Filter.G_NOM_DR2);
-		filters.add(Filter.BP_NOM_DR2);
-		filters.add(Filter.RP_NOM_DR2);
-		filters.add(Filter.G_REV_DR2);
-		filters.add(Filter.BP_REV_DR2);
-		filters.add(Filter.RP_REV_DR2);
+		quantities.add(Filter.G_NOM_DR2);
+		quantities.add(Filter.BP_NOM_DR2);
+		quantities.add(Filter.RP_NOM_DR2);
+		quantities.add(Filter.G_REV_DR2);
+		quantities.add(Filter.BP_REV_DR2);
+		quantities.add(Filter.RP_REV_DR2);
 		// Montreal models provide the same filters for each atmosphere type
-		filtersByAtm.put(WdAtmosphereType.H, filters);
-		filtersByAtm.put(WdAtmosphereType.He, filters);
+		quantitiesByAtm.put(WdAtmosphereType.H, quantities);
+		quantitiesByAtm.put(WdAtmosphereType.He, quantities);
 		
 		double[] masses = new double[]{0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2};
 		// Montreal models use the same set of mass gridpoints for each atmosphere type
@@ -72,7 +76,7 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
      *  {@inheritDoc}
      */
 	@Override
-	protected WdCoolingModelGrid load(Filter filter, WdAtmosphereType atm) {
+	protected WdCoolingModelGrid load(Quantity<?> filter, WdAtmosphereType atm) {
 		
 		NavigableMap<Double, MonotonicLinear> mbolAsFnTcoolByMass = new TreeMap<>();
 		
@@ -94,14 +98,14 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
 	        	double[][] data = ParseUtil.parseFile(in, ParseUtil.whitespaceDelim, comments);
 	        	int nPoints = data[0].length;
 	        	double[] coolingTimeArray = new double[nPoints];
-		        double[] magnitudeArray = new double[nPoints];
+		        double[] quantityArray = new double[nPoints];
 		        for (int p = 0; p < nPoints; p++) 
 		        {
 		        	coolingTimeArray[p] = data[timeCol][nPoints - (p+1)];
-		        	magnitudeArray[p] = data[bandCol][nPoints - (p+1)];
+		        	quantityArray[p] = data[bandCol][nPoints - (p+1)];
 		        }
 		        try {
-		        	mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, magnitudeArray));
+		        	mbolAsFnTcoolByMass.put(mass, new MonotonicLinear(coolingTimeArray, quantityArray));
 		        }
 		        catch(RuntimeException e) {
 		        	logger.log(Level.SEVERE, "Unable to load Montreal WD cooling model file "
@@ -127,8 +131,8 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
      * 		The stellar mass
      * @param atm
      * 		The AtmosphereType
-     * @param band
-     * 		The passband
+     * @param q
+     * 		The {@link Quantity}.
      * @param cols
      * 		Two-element int array; on exit, the elements will contain the indices of the columns that
      * contain the cooling time [0] and desired magnitude [1]. Indexing is zero-based, i.e. first column
@@ -136,122 +140,148 @@ public class WdCoolingModelSet_Montreal extends WdCoolingModelSet {
      * @return 
      * 		The name of the file containing the corresponding WD model.
      */
-    private static String resolveFileName(double mass, WdAtmosphereType atm, Filter band, int[] cols) {
+    private static String resolveFileName(double mass, WdAtmosphereType atm, Quantity<?> q, int[] cols) {
     	
     	String directory = "";
     	// Zero-based indexing of the columns
     	int timeCol = 0;
     	int bandCol = 0;
     	
-    	switch(band) {
-    	case M_BOL:
-    		timeCol = 26;
-    		bandCol = 2;
-    		directory = "standard";
-    		break;
-    	case U:
-    		timeCol = 26;
-    		bandCol = 4;
-    		directory = "standard";
-    		break;
-    	case B:
-    		timeCol = 26;
-			bandCol = 5;
-			directory = "standard";
-			break;
-    	case V:
-    		timeCol = 26;
-			bandCol = 6;
-			directory = "standard";
-			break;
-    	case R:
-    		timeCol = 26;
-			bandCol = 7;
-			directory = "standard";
-			break;
-    	case I:
-    		timeCol = 26;
-			bandCol = 8;
-			directory = "standard";
-			break;
-    	case F606W_ACS:
-    		timeCol = 3;
-			bandCol = 7;
-			directory = "hst";
-			break;
-    	case F814W_ACS:
-    		timeCol = 3;
-			bandCol = 11;
-			directory = "hst";
-			break;
-    	case SDSS_U:
-    		timeCol = 23;
-			bandCol = 12;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case SDSS_G:
-    		timeCol = 23;
-			bandCol = 13;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case SDSS_R:
-    		timeCol = 23;
-			bandCol = 14;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case SDSS_I:
-    		timeCol = 23;
-			bandCol = 15;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case SDSS_Z:
-    		timeCol = 23;
-			bandCol = 16;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case G_NOM_DR2:
-    		timeCol = 23;
-			bandCol = 17;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case BP_NOM_DR2:
-    		timeCol = 23;
-			bandCol = 18;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case RP_NOM_DR2:
-    		timeCol = 23;
-			bandCol = 19;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case G_REV_DR2:
-    		timeCol = 23;
-			bandCol = 20;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case BP_REV_DR2:
-    		timeCol = 23;
-			bandCol = 21;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-    	case RP_REV_DR2:
-    		timeCol = 23;
-			bandCol = 22;
-			// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
-			directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
-			break;
-		default:
-			throw new IllegalArgumentException(WdCoolingModelSet_Montreal.class.getName()+" don't support filter "+band);
+    	if(q instanceof Filter) {
+    	
+    		Filter band = (Filter)q;
+    		
+	    	switch(band) {
+	    	case M_BOL:
+	    		timeCol = 26;
+	    		bandCol = 2;
+	    		directory = "standard";
+	    		break;
+	    	case U:
+	    		timeCol = 26;
+	    		bandCol = 4;
+	    		directory = "standard";
+	    		break;
+	    	case B:
+	    		timeCol = 26;
+				bandCol = 5;
+				directory = "standard";
+				break;
+	    	case V:
+	    		timeCol = 26;
+				bandCol = 6;
+				directory = "standard";
+				break;
+	    	case R:
+	    		timeCol = 26;
+				bandCol = 7;
+				directory = "standard";
+				break;
+	    	case I:
+	    		timeCol = 26;
+				bandCol = 8;
+				directory = "standard";
+				break;
+	    	case F606W_ACS:
+	    		timeCol = 3;
+				bandCol = 7;
+				directory = "hst";
+				break;
+	    	case F814W_ACS:
+	    		timeCol = 3;
+				bandCol = 11;
+				directory = "hst";
+				break;
+	    	case SDSS_U:
+	    		timeCol = 23;
+				bandCol = 12;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case SDSS_G:
+	    		timeCol = 23;
+				bandCol = 13;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case SDSS_R:
+	    		timeCol = 23;
+				bandCol = 14;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case SDSS_I:
+	    		timeCol = 23;
+				bandCol = 15;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case SDSS_Z:
+	    		timeCol = 23;
+				bandCol = 16;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case G_NOM_DR2:
+	    		timeCol = 23;
+				bandCol = 17;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case BP_NOM_DR2:
+	    		timeCol = 23;
+				bandCol = 18;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case RP_NOM_DR2:
+	    		timeCol = 23;
+				bandCol = 19;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case G_REV_DR2:
+	    		timeCol = 23;
+				bandCol = 20;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case BP_REV_DR2:
+	    		timeCol = 23;
+				bandCol = 21;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+	    	case RP_REV_DR2:
+	    		timeCol = 23;
+				bandCol = 22;
+				// XXX: Hardcode to use the thin H layer models, if H atmosphere is requested
+				directory = "gaia" + (atm==WdAtmosphereType.H ? "/thin" : "");
+				break;
+			default:
+				throw new IllegalArgumentException(WdCoolingModelSet_Montreal.class.getName()+" don't support filter "+band);
+	    	}
+    	}
+    	
+    	if(q instanceof AtmosphereParameter) {
+    		
+    		AtmosphereParameter ap = (AtmosphereParameter)q;
+    		
+    		switch(ap) {
+	    	case TEFF:
+	    		timeCol = 26;
+	    		bandCol = 0;
+	    		directory = "standard";
+	    		break;
+	    	case LOGG:
+	    		timeCol = 26;
+	    		bandCol = 1;
+	    		directory = "standard";
+	    		break;
+			default:
+				throw new IllegalArgumentException(WdCoolingModelSet_Montreal.class.getName()+" don't support atmosphere parameter "+ap);
+	    	}
+    		
     	}
     	
     	cols[0] = timeCol;

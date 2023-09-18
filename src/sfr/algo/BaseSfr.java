@@ -11,11 +11,16 @@ import infra.os.OSChecker;
  *  2) Write tester GUI that tests the drawing of random creation times
  */
 public abstract class BaseSfr {
-	
+
 	/**
-     * Instance used by extending classes to draw random creation times.
+	 * Fixed seed to use for random number generation, in order to make applications deterministic.
+	 */
+	public static final long seed = 58315548397523634L;
+	
+    /**
+     * Instance of {@link Random} used to provide random number generation.
      */
-    protected static Random rng = new Random();
+	protected static final Random random = new Random(seed);
 	
     /** 
      * Minimum lookback time [yr]. At times younger than this the star formation rate is zero.
@@ -101,6 +106,7 @@ public abstract class BaseSfr {
      * Gets a table of data representing the star formation rate, one point per line, formatted into two
      * columns containing the lookback time (column 1) and star formation rate (column 2). The format of
      * the table is such that it is suitable for plotting with Gnuplot.
+     * 
      * @return
      * 	A table of data representing the star formation rate, one point per line, formatted into two
      * columns containing the lookback time (column 1) and star formation rate (column 2).

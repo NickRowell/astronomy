@@ -24,12 +24,17 @@ public class Ifmr_Catalan2008 extends BaseIfmr {
         // Two component linear model, artificially limited to mf = 1.2M_0
         // because WD models don't go any higher than this.
         
-        if(mi <= 2.7)
+        if(mi <= 2.7) {
             // Low mass component
             return 0.096 * mi + 0.429;
-        else
+        }
+        else {
             // High mass component, clamped to 1.2M_0
-            return Math.min(1.2, 0.137 * mi + 0.318);
+//            return Math.min(1.2, 0.137 * mi + 0.318);
+        	
+        	// Removed the clamping to 1.2 on 27/08/2023 because WD models are available for higher masses
+        	return 0.137 * mi + 0.318;
+        }
     }
     
     /**
@@ -40,7 +45,9 @@ public class Ifmr_Catalan2008 extends BaseIfmr {
     {
         
         // Limit range of WD mass to < 1.2 M_0
-        if(mf > 1.2) mf = 1.2;
+    	
+    	// Removed the clamping to 1.2 on 27/08/2023 because WD models are available for higher masses
+//        if(mf > 1.2) mf = 1.2;
         
         if(mf > getMf(2.7))
             // High mass component

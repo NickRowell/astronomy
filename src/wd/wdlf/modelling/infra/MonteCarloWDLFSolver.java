@@ -68,12 +68,17 @@ public class MonteCarloWDLFSolver extends WDLFSolver {
             
             N_SIM_STARS++;
             
+            // XXX Restrict WDLF to 0.9-1.0 solar mass WDs
+//            if(star.getWhiteDwarfMass() < 0.9 || star.getWhiteDwarfMass() > 1.1) {
+//            	continue;
+//            }
+            
             // Determine time that star has been cooling as a WD
             if((coolingTimeWD = (star.getTotalAge() - star.getPreWdLifetime())) > 0.0) {
             	
                 // Star HAS become a WD
                 // Get bolometric magnitude at present day
-                double mbol = wdCoolingModels.mag(coolingTimeWD, star.getWhiteDwarfMass(), star.getWhiteDwarfAtmph(), filter);
+                double mbol = wdCoolingModels.quantity(coolingTimeWD, star.getWhiteDwarfMass(), star.getWhiteDwarfAtmph(), filter);
                 
                 // Add Gaussian noise
                 mbol += error.nextGaussian() * modellingState.params.getSigM();
@@ -182,7 +187,7 @@ public class MonteCarloWDLFSolver extends WDLFSolver {
         
         // Get only non-zero density bins from whiteDwarfs
         ModelWDLF modelWdlf = ModelWdlfUtil.getLF(true, whiteDwarfs);
-        modelWdlf.setTarget("Simulated WDLF");
+        modelWdlf.setName("Simulated WDLF");
         modelWdlf.setFilter(modellingState.params.getFilter());
         
         return modelWdlf;

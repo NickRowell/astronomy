@@ -31,9 +31,14 @@ public class MonteCarloInverter {
 	private static final Logger logger = Logger.getLogger(MonteCarloInverter.class.getName());
 	
 	/**
+	 * Fixed seed to use for random number generation, in order to make applications deterministic.
+	 */
+	public static final long seed = 583155485729405634L;
+	
+	/**
      * Used to add Gaussian observation sigma to bolometric magnitude.
      */
-    private static Random error = new Random();
+    private static Random error = new Random(seed);
 	
     // Simulation parameters & objects
     
@@ -123,7 +128,7 @@ public class MonteCarloInverter {
                 	WdAtmosphereType atmType = star.getWhiteDwarfAtmph();
                 
                     // Get magnitude at present day
-                    double mag = wdCoolingModelSet.mag(coolingTimeWD, wdMass, atmType, filter);
+                    double mag = wdCoolingModelSet.quantity(coolingTimeWD, wdMass, atmType, filter);
                     
                     // Add (Gaussian) error to the magnitude to simulate observation error
                     mag += error.nextGaussian() * inversionState.params.getSigM();
@@ -149,6 +154,58 @@ public class MonteCarloInverter {
                     // Record whether star falls in WDLF data bin or not. Only
                     // observed WDs can be used to constrain star formation history.
                     star.setIsObserved(whiteDwarfs.add(star.getMag(), star));
+                    
+                    // Examine stars that fall in certain parts of the parameter space:
+
+                    // XXX
+//                    if(t_lower > 14.0e9 && star.getIsObserved()) {
+//                    	
+//                    	System.out.println("Found observed ancient star formed at " + star.getTotalAge());
+//                    	System.out.println("wdMass  = " + wdMass);
+//                    	System.out.println("msMass  = " + star.getProgenitorMass());
+//                    	System.out.println("Pre-WD  = " + star.getPreWdLifetime());
+//                    	System.out.println("tcool   = " + coolingTimeWD);
+//                    	System.out.println("mBol    = " + mag);
+//                    	System.out.println("atmType = " + atmType);
+//                    	System.out.println("extrap  = " + star.getExtrap());
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    }
+
+                    // XXX
+//                    if(mag > 17.5 && star.getIsObserved()) {
+//                    	
+//                    	System.out.println("Found observed very faint WD star formed at " + star.getTotalAge());
+//                    	System.out.println("wdMass  = " + wdMass);
+//                    	System.out.println("msMass  = " + star.getProgenitorMass());
+//                    	System.out.println("Pre-WD  = " + star.getPreWdLifetime());
+//                    	System.out.println("tcool   = " + coolingTimeWD);
+//                    	System.out.println("mBol    = " + mag);
+//                    	System.out.println("atmType = " + atmType);
+//                    	System.out.println("extrap  = " + star.getExtrap());
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    }
+                    
+                    // XXX
+//                    if(star.getProgenitorMass() < 1.0 && star.getIsObserved()) {
+//
+//                    	System.out.println("\nLow mass progenitor:");
+//                    	System.out.println("wdMass          = " + wdMass);
+//                    	System.out.println("msMass          = " + star.getProgenitorMass());
+//                    	System.out.println("Pre-WD lifetime = " + star.getPreWdLifetime());
+//                    	System.out.println("Lookback time   = " + star.getTotalAge());
+//                    	System.out.println("Cooling time    = " + coolingTimeWD);
+//                    	System.out.println("WD mbol         = " + mag);
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    	System.out.println("");
+//                    }
                     
                     progenitors.add(star.getTotalAge(), star);
                 }
@@ -213,23 +270,26 @@ public class MonteCarloInverter {
             }
         }
 
-        // Make the diagnostic plots P_{MS} and P_{WD}
-        logger.info("Iteration "+inversionState.iterations+": Writing output files...\n");
+        if(inversionState.writeOutput) {
         
-        File outputDir = new File(inversionState.outputDirectory, String.format("Iteration_%d",inversionState.iterations));
-        
-        if(!outputDir.mkdir()) {
-        	logger.severe("Iteration "+inversionState.iterations+": Could not create output directory\n");
-            throw new IOException("Could not make output directory " + outputDir.getAbsolutePath()+"!");
+	        // Make the diagnostic plots P_{MS} and P_{WD}
+	        logger.info("Iteration "+inversionState.iterations+": Writing output files...\n");
+	        
+	        File outputDir = new File(inversionState.outputDirectory, String.format("Iteration_%d",inversionState.iterations));
+	        
+	        if(!outputDir.mkdir()) {
+	        	logger.severe("Iteration "+inversionState.iterations+": Could not create output directory\n");
+	            throw new IOException("Could not make output directory " + outputDir.getAbsolutePath()+"!");
+	        }
+	        
+	        logger.info("Iteration "+inversionState.iterations+": Creating P_WD\n");
+	        
+	        pwdPlot = InversionPlotUtil.getPwd(outputDir, inversionState, whiteDwarfs);
+	        
+	        logger.info("Iteration "+inversionState.iterations+": Creating P_MS\n");
+	        
+	        pmsPlot = InversionPlotUtil.getPms(outputDir, inversionState, progenitors);
         }
-        
-        logger.info("Iteration "+inversionState.iterations+": Creating P_WD\n");
-        
-        pwdPlot = InversionPlotUtil.getPwd(outputDir, inversionState, whiteDwarfs);
-        
-        logger.info("Iteration "+inversionState.iterations+": Creating P_MS\n");
-        
-        pmsPlot = InversionPlotUtil.getPms(outputDir, inversionState, progenitors);
         
         // Print out chi-square for this iteration
         logger.info("Iteration "+inversionState.iterations+": Chi^2 = "+chi2+"\n");

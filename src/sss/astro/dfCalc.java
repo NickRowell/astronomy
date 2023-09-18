@@ -32,6 +32,8 @@ package sss.astro;
 import java.io.*;
 import java.text.DecimalFormat;
 import Jama.*;
+import constants.Galactic;
+
 import java.util.Scanner;
 
 /**
@@ -272,8 +274,8 @@ public class dfCalc {
 	//++++++++++ Set up complete transformation from galactic -> normal +++++++//
 	//++++++++++                                                        +++++++//
 
-	Matrix RTG = RTN.times(GalacticCoordinates.NTG); //transformation from Galactic to Normal triad
-	Matrix GTR = GalacticCoordinates.GTN.times(NTR);
+	Matrix RTG = RTN.times(Galactic.NTG); //transformation from Galactic to Normal triad
+	Matrix GTR = Galactic.GTN.times(NTR);
 
 
 	//++++++++++ Transform relative velocity vector to normal triad and get +++++++//

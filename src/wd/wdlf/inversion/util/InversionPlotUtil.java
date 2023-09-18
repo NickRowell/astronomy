@@ -80,7 +80,8 @@ public class InversionPlotUtil {
 	 * Step size in WD mass function for plotting [M_{Solar}]. Note that the step size
 	 * used is trimmed down to fit a whole number of steps within the defined range.
 	 */
-	private static final double wdMassFunctionStepSize = 0.01;
+//	private static final double wdMassFunctionStepSize = 0.025;
+	private static final double wdMassFunctionStepSize = 0.0025;
 	
 	/**
 	 * Step size in WD luminosity function for plotting [mag]. Note that the step size
@@ -376,13 +377,15 @@ public class InversionPlotUtil {
         script.append("set xlabel \"\"").append(OSChecker.newline);
         script.append("set ylabel \"\"").append(OSChecker.newline);
         script.append("unset xtics").append(OSChecker.newline);
-        script.append("unset ytics").append(OSChecker.newline);
+        script.append("set ytics 1 out").append(OSChecker.newline);
+        script.append("set format y ''").append(OSChecker.newline);
         
         // Plot annotations...
         script.append("plot '" + parent.getPath() + OSChecker.pathSep + lowMsMassFilename + "' with filledcurves x1 fillstyle solid 1.0 noborder ls 2 notitle,\\").append(OSChecker.newline);
         script.append("     '" + parent.getPath() + OSChecker.pathSep + msBoundaryFilename + "' u 1:2:(0) w l ls 1 notitle ").append(OSChecker.newline);
-        
+
         // Tidy up
+        script.append("unset ytics").append(OSChecker.newline);
         script.append("unset label 1").append(OSChecker.newline);
         script.append("unset label 2").append(OSChecker.newline);
         script.append("unset label 3").append(OSChecker.newline);
@@ -455,7 +458,7 @@ public class InversionPlotUtil {
      * 	The main {@link InversionState} instance that encapsulates all the modelling parameters and
      * other quantities.
      * @param whiteDwarfs
-     * 	The {@link RangeMap<Star>} containing the stars to process.
+     * 	The {@link RangeMap<Star>} containing the stars to process, binned on magnitude.
      * @return
 	 * 	A {@link BufferedImage} containing the diagnostic plot P_{WD}: the joint distribution of white dwarf
      * mass and magnitude.
@@ -515,6 +518,8 @@ public class InversionPlotUtil {
         double dY = (maxY - minY) / Math.ceil((maxY - minY) / wdMassFunctionStepSize);
 
         Histogram wdMassDistribution = new Histogram(minY, maxY, dY, true);
+        Histogram wdMassDistributionH = new Histogram(minY, maxY, dY, true);
+        Histogram wdMassDistributionHe = new Histogram(minY, maxY, dY, true);
         double wdMassFunctionPeak = 0.5;
         double meanWdMass = Double.NaN;
         double medianWdMass = Double.NaN;
@@ -528,6 +533,14 @@ public class InversionPlotUtil {
                 for (Star star : whiteDwarfs.get(bin)) {
                     wdMassMagJointDistribution.add(star.getMag(), star.getWhiteDwarfMass(), star.getNumber()/(dX*dY));
                     wdMassDistribution.add(star.getWhiteDwarfMass(), star.getNumber());
+                    switch(star.getWhiteDwarfAtmph()) {
+                    case H:
+                    	wdMassDistributionH.add(star.getWhiteDwarfMass(), star.getNumber());
+                    	break;
+                    case He:
+                    	wdMassDistributionHe.add(star.getWhiteDwarfMass(), star.getNumber());
+                    	break;
+                    }
                 }
         	}
         	zmax = wdMassMagJointDistribution.getMax();
@@ -545,6 +558,13 @@ public class InversionPlotUtil {
         out.write(wdMassDistribution.print(false));
         out.close();
         
+        out = new BufferedWriter(new FileWriter(new File(parent, wdMassDistFileName + "_H")));
+        out.write(wdMassDistributionH.print(false));
+        out.close();
+
+        out = new BufferedWriter(new FileWriter(new File(parent, wdMassDistFileName + "_He")));
+        out.write(wdMassDistributionHe.print(false));
+        out.close();
 
         /////////////////////////////////////////////////////////////////////////
         //                                                                     //
@@ -611,6 +631,8 @@ public class InversionPlotUtil {
         script.append("set style line 2 lt 3 lc rgb \"blue\" lw 1").append(OSChecker.newline);
         script.append("set style line 3 lt 1 lc rgb \"black\" lw 1").append(OSChecker.newline);
         script.append("set style line 4 lt 1 lc rgb \"grey\" lw 1").append(OSChecker.newline);
+        script.append("set style line 5 lt 3 lc rgb \"red\" lw 1").append(OSChecker.newline);
+        script.append("set style line 6 lt 3 lc rgb \"green\" lw 1").append(OSChecker.newline);
         
 //        script.append("set size 1024,1024").append(OSChecker.newline);
         script.append("set multiplot").append(OSChecker.newline);
@@ -650,6 +672,11 @@ public class InversionPlotUtil {
         // Plot WD mass distribution
         script.append("plot '" + parent.getPath() + OSChecker.pathSep + wdMassDistFileName + "' u 2:1 w l ls 2").append(OSChecker.newline);
 
+        // Plot H and He mass distributions separately
+        script.append("plot '" + parent.getPath() + OSChecker.pathSep + wdMassDistFileName + "' u 2:1 w l ls 2,\\").append(OSChecker.newline);
+        script.append("     '" + parent.getPath() + OSChecker.pathSep + wdMassDistFileName + "_H' u 2:1 w l ls 5,\\").append(OSChecker.newline);
+        script.append("     '" + parent.getPath() + OSChecker.pathSep + wdMassDistFileName + "_He' u 2:1 w l ls 6").append(OSChecker.newline);
+        
         // Tidy up
         script.append("unset arrow 1").append(OSChecker.newline);
         script.append("unset arrow 2").append(OSChecker.newline);
@@ -862,7 +889,7 @@ public class InversionPlotUtil {
         for(double wdMass = maxWdMass; wdMass>=minWdMass; wdMass-=DMASS)
         {
             // Get bolometric magnitude at cooling time of zero.
-            points.add(new double[]{wdCoolingModelSet.mag(0, wdMass, atm, filter), wdMass});
+            points.add(new double[]{wdCoolingModelSet.quantity(0, wdMass, atm, filter), wdMass});
         } 
         
         return points; 
@@ -911,7 +938,7 @@ public class InversionPlotUtil {
         // Corresponding minimum WD mass
         double minWdMass = ifmr.getMf(msTurnOffMass);
         // Minimum magnitude, at zero cooling time
-        double minWdMag = wdCoolingModelSet.mag(0, minWdMass, atm, filter);
+        double minWdMag = wdCoolingModelSet.quantity(0, minWdMass, atm, filter);
         
         // Add this first point to List
         points.add(new double[]{minWdMag, minWdMass});

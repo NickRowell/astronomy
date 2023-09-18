@@ -56,7 +56,7 @@ public class WDTester {
         double tcool_in = 7.692158e9;
         
         // Get interpolated magnitude at cooling time of 7.692158e9 years.
-        double mbol_in = wd.mag(tcool_in, mass, atm, filter);
+        double mbol_in = wd.quantity(tcool_in, mass, atm, filter);
         
         logger.info("mbol("+tcool_in+") = "+mbol_in);
 

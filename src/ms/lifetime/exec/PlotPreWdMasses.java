@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 
+import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -17,10 +18,10 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import infra.gui.IPanel;
 import infra.io.Gnuplot;
 import infra.os.OSChecker;
 import ms.lifetime.algo.PreWdLifetime;
+import ms.lifetime.algo.PreWdLifetimeTabulated;
 import ms.lifetime.infra.PreWdLifetimeModels;
 import numeric.functions.MonotonicFunction1D;
 import numeric.functions.MonotonicLinear;
@@ -90,7 +91,9 @@ public class PlotPreWdMasses {
 		final JSlider zSlider = GuiUtil.buildSlider(zMin, zMax, 2, "%4.2f");
 		final JSlider ySlider = GuiUtil.buildSlider(yMin, yMax, 2, "%4.2f");
 		
-		final IPanel ipanel = new IPanel(plotPreWdMasses());
+		JLabel label = new JLabel();
+		ImageIcon icon = new ImageIcon(plotPreWdMasses());
+		label.setIcon(icon);
 		
         ActionListener al = new ActionListener() {
             @Override
@@ -101,7 +104,8 @@ public class PlotPreWdMasses {
             		preWdLifetimes = (PreWdLifetimeModels)preWdLifetimeModelComboBox.getSelectedItem();
             	}
             	try {
-					ipanel.setImage(plotPreWdMasses());
+					icon.setImage(plotPreWdMasses());
+					label.repaint();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -123,7 +127,8 @@ public class PlotPreWdMasses {
 					yLabel.setText(getYLabel());
 				}
 				try {
-					ipanel.setImage(plotPreWdMasses());
+					icon.setImage(plotPreWdMasses());
+					label.repaint();
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
@@ -156,7 +161,7 @@ public class PlotPreWdMasses {
                     JFrame tester = new JFrame();
                     tester.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     tester.setLayout(new BorderLayout());
-                    tester.add(ipanel, BorderLayout.CENTER);
+                    tester.add(label, BorderLayout.CENTER);
                     tester.add(buttonPanel, BorderLayout.SOUTH);
                     tester.pack();
                     tester.setVisible(true);
@@ -198,7 +203,7 @@ public class PlotPreWdMasses {
 		int nPoints = (int)Math.ceil((maxLifeTime - minLifeTime) / stepLifeTime);
 		
 		// Name of models set
-		String name = preWdLifetime.toString();
+		String name = preWdLifetime.getName();
 		
 		// Array of interpolated data points
 		double[][] dataInterp = new double[nPoints][2];
@@ -215,33 +220,43 @@ public class PlotPreWdMasses {
 			dataInterp[d][1] = mass;
 		}
 		
-		// Array of raw data points. A bit trickier to assemble.
-		NavigableMap<Double, NavigableMap<Double, MonotonicFunction1D>> lifetimeAsFnMassByMetallicity = 
-				preWdLifetime.lifetimeAsFnMassByMetallicity;
+		// Will be populated with tabulated values, if they exist
+		String[] titles = null;
+		double[][][] data = null;
 		
-		// Calculate the number of distinct metallicity tracks
-		int nMetals = 0;
-		for(Entry<Double, NavigableMap<Double, MonotonicFunction1D>> outer : lifetimeAsFnMassByMetallicity.entrySet()) {
-			nMetals += outer.getValue().size();
-		}
-		
-		// Create arrays to store refactored data
-		String[] titles = new String[nMetals];
-		double[][][] data = new double[nMetals][2][];
-		
-		// Read the tracks out
-		int index = 0;
-		for(Entry<Double, NavigableMap<Double, MonotonicFunction1D>> outer : lifetimeAsFnMassByMetallicity.entrySet()) {
-			double z = outer.getKey();
-			for(Entry<Double, MonotonicFunction1D> inner : outer.getValue().entrySet()) {
-				double y = inner.getKey();
-				titles[index] = String.format("Z=%f Y=%f", z, y);
-				// NOTE: this will stop working if we don't use MonotonicLinear to interpolate the lifetimes.
-				// Might be better to introduce a new type that encapsulates an interpolated set of points.
-				MonotonicLinear track = (MonotonicLinear)inner.getValue();
-				data[index][0] = track.Y;
-				data[index][1] = track.X;
-				index++;
+		// For implementations of the pre-WD lifetimes that are based on tabulated data, we add the tabulated points
+		if(preWdLifetime instanceof PreWdLifetimeTabulated) {
+
+			PreWdLifetimeTabulated preWdLifetimeTab = (PreWdLifetimeTabulated)preWdLifetime;
+			
+			// Array of raw data points. A bit trickier to assemble.
+			NavigableMap<Double, NavigableMap<Double, MonotonicFunction1D>> lifetimeAsFnMassByMetallicity = 
+					preWdLifetimeTab.lifetimeAsFnMassByMetallicity;
+			
+			// Calculate the number of distinct metallicity tracks
+			int nMetals = 0;
+			for(Entry<Double, NavigableMap<Double, MonotonicFunction1D>> outer : lifetimeAsFnMassByMetallicity.entrySet()) {
+				nMetals += outer.getValue().size();
+			}
+			
+			// Create arrays to store refactored data
+			titles = new String[nMetals];
+			data = new double[nMetals][2][];
+			
+			// Read the tracks out
+			int index = 0;
+			for(Entry<Double, NavigableMap<Double, MonotonicFunction1D>> outer : lifetimeAsFnMassByMetallicity.entrySet()) {
+				double z = outer.getKey();
+				for(Entry<Double, MonotonicFunction1D> inner : outer.getValue().entrySet()) {
+					double y = inner.getKey();
+					titles[index] = String.format("Z=%f Y=%f", z, y);
+					// NOTE: this will stop working if we don't use MonotonicLinear to interpolate the lifetimes.
+					// Might be better to introduce a new type that encapsulates an interpolated set of points.
+					MonotonicLinear track = (MonotonicLinear)inner.getValue();
+					data[index][0] = track.Y;
+					data[index][1] = track.X;
+					index++;
+				}
 			}
 		}
 		
@@ -257,32 +272,35 @@ public class PlotPreWdMasses {
 				"plot ";
 		
 		// Plot commands for interpolated WD cooling models
-		script += "'-' u 1:2 w l lw 2 lc rgbcolor 'black' title '"+name+"',";
+		script += "'-' u 1:2 w l lw 2 lc rgbcolor 'black' title '"+name+"'";
 		
-		// Plot commands for raw data points
-		for(int i=0; i<nMetals; i++) {
-			script += "'-' u 1:2 w p pt 5 ps 0.25 notitle";
-			if(i!=nMetals-1) {
-				script += ",";
+		if(titles!=null) {
+			// Got tabulated values; add plot commands
+			script += ",";
+			for(int i=0; i<titles.length; i++) {
+				script += "'-' u 1:2 w p pt 5 ps 0.25 notitle";
+				if(i!=titles.length-1) {
+					script += ",";
+				}
 			}
 		}
 		
 		script += OSChecker.newline;
 		
 		// In-place data for the interpolated cooling models
-		for(double[] series : dataInterp)
-		{
+		for(double[] series : dataInterp) {
 			script += series[0] + " " + series[1] + OSChecker.newline;
 		}
 		script += "e" + OSChecker.newline;
 		
-		// In-place data for the raw cooling models
-		for(int i=0; i<nMetals; i++) {
-			for(int j=0; j<data[i][0].length; j++)
-			{
-				script += data[i][0][j]/1e9 + " " + data[i][1][j] + OSChecker.newline;
+		if(titles!=null) {
+			// Got tabulated values; add plot commands
+			for(int i=0; i<titles.length; i++) {
+				for(int j=0; j<data[i][0].length; j++) {
+					script += data[i][0][j] + " " + data[i][1][j]/1e9 + OSChecker.newline;
+				}
+				script += "e" + OSChecker.newline;
 			}
-			script += "e" + OSChecker.newline;
 		}
 		
 		BufferedImage plot = Gnuplot.executeScript(script);
