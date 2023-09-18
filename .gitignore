@@ -24,5 +24,10 @@ bin/
 
 src/resources/spectro/pickles/hilib.pdf
 
-# Ignore backups created by text editore etc
+# Ignore large tables of stellar tracks
+src/resources/ms/parsec_v1p2/Z0.0*
+src/resources/ms/parsec_v2p0/VAR_ROT*
+
+
+# Ignore backups created by text editors etc
 *~
